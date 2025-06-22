@@ -2498,7 +2498,7 @@ class FishingGame {
                     btn.className = 'skill-btn cooling';
                     const originalText = btn.getAttribute('data-original-text') || btn.textContent.split('(')[0];
                     btn.textContent = `${originalText}(${Math.ceil(skill.cooldown / 1000)}s)`;
-                } else if (config && this.coins < config.cost) {
+                } else if (config && config.cost && this.coins < config.cost) {
                     btn.disabled = true;
                     btn.className = 'skill-btn';
                     // 恢復原始文本
@@ -2507,7 +2507,7 @@ class FishingGame {
                     }
                     const originalText = btn.getAttribute('data-original-text');
                     btn.textContent = `${originalText}(${config.cost}金)`;
-                } else {
+                } else if (config && config.cost) {
                     btn.disabled = false;
                     btn.className = 'skill-btn';
                     // 恢復原始文本
@@ -2516,6 +2516,10 @@ class FishingGame {
                     }
                     const originalText = btn.getAttribute('data-original-text');
                     btn.textContent = `${originalText}(${config.cost}金)`;
+                } else {
+                    // 如果沒有配置，保持按鈕原樣
+                    btn.disabled = false;
+                    btn.className = 'skill-btn';
                 }
             }
         });
@@ -2543,7 +2547,7 @@ class FishingGame {
                         const originalText = btn.getAttribute('data-original-text') || btn.textContent.split('(')[0];
                         btn.textContent = `${originalText}(${item.uses}次)`;
                     }
-                } else if (config && this.coins < config.cost) {
+                } else if (config && config.cost && this.coins < config.cost) {
                     btn.disabled = true;
                     btn.className = 'item-btn';
                     // 恢復原始文本
@@ -2552,7 +2556,7 @@ class FishingGame {
                     }
                     const originalText = btn.getAttribute('data-original-text');
                     btn.textContent = `${originalText}(${config.cost}金)`;
-                } else {
+                } else if (config && config.cost) {
                     btn.disabled = false;
                     btn.className = 'item-btn';
                     // 恢復原始文本
@@ -2561,6 +2565,10 @@ class FishingGame {
                     }
                     const originalText = btn.getAttribute('data-original-text');
                     btn.textContent = `${originalText}(${config.cost}金)`;
+                } else {
+                    // 如果沒有配置，保持按鈕原樣
+                    btn.disabled = false;
+                    btn.className = 'item-btn';
                 }
             }
         });
