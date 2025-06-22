@@ -11,8 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeGame() {
     try {
+        console.log('開始初始化遊戲...');
+        console.log('GAME_CONFIG:', typeof GAME_CONFIG, GAME_CONFIG);
+        
         // 檢查必要的類和配置是否已加載
         if (typeof GAME_CONFIG === 'undefined') {
+            console.error('GAME_CONFIG 未加載，嘗試重新載入頁面');
+            setTimeout(() => location.reload(), 1000);
             throw new Error('GAME_CONFIG 未加載');
         }
         if (typeof Fish === 'undefined') {
