@@ -857,8 +857,8 @@ body {
 /* 新增：道具面板 */
 .item-panel {
     position: fixed;
-    top: 10px;
-    right: 230px;
+    top: 150px;
+    right: 10px;
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid #9370DB;
     border-radius: 10px;
