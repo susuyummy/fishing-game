@@ -84,38 +84,12 @@
     </div>
 
     <!-- 遊戲腳本 -->
-    <script>
-        // 腳本加載檢查
-        console.log('開始加載遊戲腳本...');
-        window.scriptLoadErrors = [];
-        
-        // 監聽腳本加載錯誤
-        window.addEventListener('error', function(e) {
-            if (e.target.tagName === 'SCRIPT') {
-                console.error('腳本加載失敗:', e.target.src);
-                window.scriptLoadErrors.push(e.target.src);
-            }
-        });
-    </script>
-    <script src="js/utils.js" onerror="console.error('utils.js 加載失敗')"></script>
-    <script src="js/fish.js" onerror="console.error('fish.js 加載失敗')"></script>
-    <script src="js/cannon.js" onerror="console.error('cannon.js 加載失敗')"></script>
-    <script src="js/bullet.js" onerror="console.error('bullet.js 加載失敗')"></script>
-    <script src="js/fishManager.js" onerror="console.error('fishManager.js 加載失敗')"></script>
-    <script src="js/game.js" onerror="console.error('game.js 加載失敗')"></script>
-    <script src="js/main.js" onerror="console.error('main.js 加載失敗')"></script>
-    <script>
-        // 檢查關鍵對象是否已加載
-        setTimeout(() => {
-            console.log('腳本加載檢查:', {
-                'GAME_CONFIG': typeof GAME_CONFIG !== 'undefined',
-                'Utils': typeof Utils !== 'undefined',
-                'Fish': typeof Fish !== 'undefined',
-                'Cannon': typeof Cannon !== 'undefined',
-                'FishingGame': typeof FishingGame !== 'undefined',
-                '加載錯誤': window.scriptLoadErrors
-            });
-        }, 500);
-    </script>
+    <script src="js/utils.js"></script>
+    <script src="js/fish.js"></script>
+    <script src="js/cannon.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/fishManager.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html> 
