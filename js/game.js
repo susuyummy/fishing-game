@@ -2352,8 +2352,16 @@ class FishingGame {
         if (betElement) betElement.textContent = this.currentBet;
         
         // 更新技能按鈕狀態
+        const skillButtons = {
+            'freeze': 'freezeBtn',
+            'bomb': 'bombBtn',
+            'laser': 'laserBtn',
+            'net': 'netBtn'
+        };
+        
         Object.keys(this.skills).forEach(skillName => {
-            const btn = document.getElementById(`${skillName}Btn`);
+            const btnId = skillButtons[skillName];
+            const btn = document.getElementById(btnId);
             if (btn) {
                 const skill = this.skills[skillName];
                 const config = GAME_CONFIG?.SPECIAL_SKILLS?.[skillName.toUpperCase()];
@@ -2361,20 +2369,40 @@ class FishingGame {
                 if (skill.cooldown > 0) {
                     btn.disabled = true;
                     btn.className = 'skill-btn cooling';
-                    btn.textContent = `${btn.textContent.split('(')[0]}(${Math.ceil(skill.cooldown / 1000)}s)`;
+                    const originalText = btn.getAttribute('data-original-text') || btn.textContent.split('(')[0];
+                    btn.textContent = `${originalText}(${Math.ceil(skill.cooldown / 1000)}s)`;
                 } else if (config && this.coins < config.cost) {
                     btn.disabled = true;
                     btn.className = 'skill-btn';
+                    // 恢復原始文本
+                    if (!btn.getAttribute('data-original-text')) {
+                        btn.setAttribute('data-original-text', btn.textContent.split('(')[0]);
+                    }
+                    const originalText = btn.getAttribute('data-original-text');
+                    btn.textContent = `${originalText}(${config.cost}金)`;
                 } else {
                     btn.disabled = false;
                     btn.className = 'skill-btn';
+                    // 恢復原始文本
+                    if (!btn.getAttribute('data-original-text')) {
+                        btn.setAttribute('data-original-text', btn.textContent.split('(')[0]);
+                    }
+                    const originalText = btn.getAttribute('data-original-text');
+                    btn.textContent = `${originalText}(${config.cost}金)`;
                 }
             }
         });
         
         // 更新道具按鈕狀態
+        const itemButtons = {
+            'doubleScore': 'doubleScoreBtn',
+            'luckyShot': 'luckyShotBtn', 
+            'rapidFire': 'rapidFireBtn'
+        };
+        
         Object.keys(this.items).forEach(itemName => {
-            const btn = document.getElementById(`${itemName}Btn`);
+            const btnId = itemButtons[itemName];
+            const btn = document.getElementById(btnId);
             if (btn) {
                 const item = this.items[itemName];
                 const config = GAME_CONFIG?.ITEMS?.[itemName.toUpperCase()];
@@ -2382,16 +2410,30 @@ class FishingGame {
                 if (item.active) {
                     btn.className = 'item-btn active';
                     if (item.duration > 0) {
-                        btn.textContent = `${btn.textContent.split('(')[0]}(${Math.ceil(item.duration / 1000)}s)`;
+                        const originalText = btn.getAttribute('data-original-text') || btn.textContent.split('(')[0];
+                        btn.textContent = `${originalText}(${Math.ceil(item.duration / 1000)}s)`;
                     } else if (item.uses > 0) {
-                        btn.textContent = `${btn.textContent.split('(')[0]}(${item.uses}次)`;
+                        const originalText = btn.getAttribute('data-original-text') || btn.textContent.split('(')[0];
+                        btn.textContent = `${originalText}(${item.uses}次)`;
                     }
                 } else if (config && this.coins < config.cost) {
                     btn.disabled = true;
                     btn.className = 'item-btn';
+                    // 恢復原始文本
+                    if (!btn.getAttribute('data-original-text')) {
+                        btn.setAttribute('data-original-text', btn.textContent.split('(')[0]);
+                    }
+                    const originalText = btn.getAttribute('data-original-text');
+                    btn.textContent = `${originalText}(${config.cost}金)`;
                 } else {
                     btn.disabled = false;
                     btn.className = 'item-btn';
+                    // 恢復原始文本
+                    if (!btn.getAttribute('data-original-text')) {
+                        btn.setAttribute('data-original-text', btn.textContent.split('(')[0]);
+                    }
+                    const originalText = btn.getAttribute('data-original-text');
+                    btn.textContent = `${originalText}(${config.cost}金)`;
                 }
             }
         });
