@@ -809,30 +809,31 @@ body {
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid #FFD700;
     border-radius: 10px;
-    padding: 15px;
-    min-width: 200px;
+    padding: 10px;
+    min-width: 150px;
+    max-width: 150px;
     z-index: 1000;
     color: white;
     font-family: Arial, sans-serif;
 }
 
 .skill-panel h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     text-align: center;
     color: #FFD700;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .skill-btn {
     display: block;
     width: 100%;
-    margin: 5px 0;
-    padding: 8px 12px;
+    margin: 3px 0;
+    padding: 6px 8px;
     background: linear-gradient(45deg, #4CAF50, #45a049);
     border: none;
     border-radius: 5px;
     color: white;
-    font-size: 12px;
+    font-size: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -857,35 +858,36 @@ body {
 /* 新增：道具面板 */
 .item-panel {
     position: fixed;
-    top: 180px;
-    left: 10px;
+    top: 10px;
+    left: 180px;
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid #9370DB;
     border-radius: 10px;
-    padding: 15px;
-    min-width: 200px;
+    padding: 10px;
+    min-width: 150px;
+    max-width: 150px;
     z-index: 1000;
     color: white;
     font-family: Arial, sans-serif;
 }
 
 .item-panel h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     text-align: center;
     color: #9370DB;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .item-btn {
     display: block;
     width: 100%;
-    margin: 5px 0;
-    padding: 8px 12px;
+    margin: 3px 0;
+    padding: 6px 8px;
     background: linear-gradient(45deg, #9370DB, #8A2BE2);
     border: none;
     border-radius: 5px;
     color: white;
-    font-size: 12px;
+    font-size: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -916,9 +918,10 @@ body {
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid #00CED1;
     border-radius: 10px;
-    padding: 15px;
-    min-width: 200px;
-    max-height: 150px;
+    padding: 8px;
+    min-width: 150px;
+    max-width: 150px;
+    max-height: 100px;
     overflow-y: auto;
     z-index: 1000;
     color: white;
@@ -926,10 +929,10 @@ body {
 }
 
 .mission-panel h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 6px 0;
     text-align: center;
     color: #00CED1;
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .mission-item {
@@ -966,13 +969,14 @@ body {
 .achievement-panel {
     position: fixed;
     bottom: 10px;
-    left: 230px;
+    left: 180px;
     background: rgba(0, 0, 0, 0.8);
     border: 2px solid #FFD700;
     border-radius: 10px;
-    padding: 15px;
-    min-width: 200px;
-    max-height: 150px;
+    padding: 8px;
+    min-width: 150px;
+    max-width: 150px;
+    max-height: 100px;
     overflow-y: auto;
     z-index: 1000;
     color: white;
@@ -980,10 +984,10 @@ body {
 }
 
 .achievement-panel h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 6px 0;
     text-align: center;
     color: #FFD700;
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .achievement-item {

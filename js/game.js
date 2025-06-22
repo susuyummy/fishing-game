@@ -1619,13 +1619,21 @@ class FishingGame {
 
     // 遊戲操作
     fire() {
-        if (this.cannon.canFire() && this.score > 0) {
+        if (this.cannon.canFire()) {
+            // 檢查是否有足夠金幣
+            if (this.coins < this.currentBet) {
+                this.showInsufficientCoins();
+                return;
+            }
+            
+            // 扣除賭注金額
+            this.coins -= this.currentBet;
+            console.log(`射擊扣除 ${this.currentBet} 金幣，剩餘 ${this.coins} 金幣`);
+            
             // 傳遞當前賭注作為傷害值
-            console.log(`發射子彈 - 當前賭注: ${this.currentBet}`);
             const bullet = this.cannon.fire(this.currentBet);
             if (bullet) {
                 this.bullets.push(bullet);
-                this.addScore(-this.cannon.cost);
                 this.gameStats.totalShots++;
                 
                 // 自動瞄準最近的魚
