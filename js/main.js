@@ -3,10 +3,8 @@ let game = null;
 
 // 當DOM加載完成時初始化遊戲
 document.addEventListener('DOMContentLoaded', function() {
-    // 延遲初始化，確保所有腳本都已加載
-    setTimeout(() => {
-        initializeGame();
-    }, 100);
+    // 直接初始化遊戲，FishingGame類會處理配置加載等待
+    initializeGame();
 });
 
 function initializeGame() {
@@ -14,12 +12,7 @@ function initializeGame() {
         console.log('開始初始化遊戲...');
         console.log('GAME_CONFIG:', typeof GAME_CONFIG, GAME_CONFIG);
         
-        // 檢查必要的類和配置是否已加載
-        if (typeof GAME_CONFIG === 'undefined') {
-            console.error('GAME_CONFIG 未加載，嘗試重新載入頁面');
-            setTimeout(() => location.reload(), 1000);
-            throw new Error('GAME_CONFIG 未加載');
-        }
+        // 檢查必要的類是否已加載
         if (typeof Fish === 'undefined') {
             throw new Error('Fish 類未加載');
         }
@@ -44,7 +37,7 @@ function initializeGame() {
         // 設置畫布大小
         setupCanvas(canvas);
 
-        // 創建遊戲實例
+        // 創建遊戲實例 - FishingGame會自己處理GAME_CONFIG的加載等待
         game = new FishingGame(canvas);
     
     // 設置賭注系統事件監聽器

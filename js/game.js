@@ -6,13 +6,15 @@ class FishingGame {
         
         // 遊戲狀態
         this.gameState = 'loading'; // loading, playing, paused, gameOver
-        this.score = GAME_CONFIG.INITIAL_SCORE;
+        
+        // 安全地初始化基本屬性，避免在構造函數中直接訪問GAME_CONFIG
+        this.score = 10000; // 使用默認值
         this.isRunning = false;
         this.isPaused = false;
         
-        // 賭注系統 - 添加安全檢查
-        this.coins = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.INITIAL_COINS : 1000;
-        this.currentBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.DEFAULT_BET : 5;
+        // 賭注系統 - 使用默認值
+        this.coins = 1000;
+        this.currentBet = 5;
         this.totalBetAmount = 0;  // 總下注金額
         this.totalWinAmount = 0;  // 總獲勝金額
         
@@ -34,8 +36,6 @@ class FishingGame {
         
         // 特效管理
         this.effects = [];
-        // this.shakeIntensity = 0;
-        // this.shakeDecay = 0.9;
         
         // 音效和設置
         this.soundEnabled = true;
@@ -51,7 +51,70 @@ class FishingGame {
             currentCombo: 0
         };
         
-        // 新增：特殊技能系統
+        // 延遲初始化需要GAME_CONFIG的屬性
+        this.skills = {};
+        this.items = {};
+        this.bossSystem = {};
+        this.jackpot = {};
+        this.missions = [];
+        this.achievements = [];
+        this.stats = {};
+        
+        // 連擊系統
+        this.comboTimer = 0;
+        this.comboTimeLimit = 3000; // 3秒內要連續捕魚才算連擊
+        
+        this.init();
+    }
+
+    init() {
+        // 等待GAME_CONFIG加載完成
+        this.waitForGameConfig().then(() => {
+            this.initializeGameConfig();
+            this.setupEventListeners();
+            this.initializeGame();
+            this.initializeUI();
+            this.showLoading();
+        }).catch(error => {
+            console.error('遊戲初始化失敗:', error);
+            this.showConfigError();
+        });
+    }
+
+    // 等待GAME_CONFIG加載完成
+    waitForGameConfig() {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 50; // 最多等待5秒
+            
+            const checkConfig = () => {
+                attempts++;
+                
+                if (typeof GAME_CONFIG !== 'undefined' && GAME_CONFIG.SPECIAL_SKILLS && GAME_CONFIG.ITEMS) {
+                    console.log('GAME_CONFIG 加載完成');
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    reject(new Error('GAME_CONFIG 加載超時'));
+                } else {
+                    console.log(`等待GAME_CONFIG加載... (${attempts}/${maxAttempts})`);
+                    setTimeout(checkConfig, 100);
+                }
+            };
+            
+            checkConfig();
+        });
+    }
+
+    // 初始化需要GAME_CONFIG的屬性
+    initializeGameConfig() {
+        console.log('初始化遊戲配置...');
+        
+        // 更新基本屬性
+        this.score = GAME_CONFIG.INITIAL_SCORE || 10000;
+        this.coins = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.INITIAL_COINS : 1000;
+        this.currentBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.DEFAULT_BET : 5;
+        
+        // 初始化特殊技能系統
         this.skills = {
             freeze: { 
                 cooldown: 0, 
@@ -75,14 +138,14 @@ class FishingGame {
             }
         };
         
-        // 新增：道具系統
+        // 初始化道具系統
         this.items = {
             doubleScore: { active: false, duration: 0 },
             luckyShot: { active: false, uses: 0 },
             rapidFire: { active: false, duration: 0 }
         };
         
-        // 新增：BOSS系統
+        // 初始化BOSS系統
         this.bossSystem = {
             nextSpawnTime: Date.now() + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL,
             activeBoss: null,
@@ -90,17 +153,17 @@ class FishingGame {
             maxBossHealth: 0
         };
         
-        // 新增：彩金系統
+        // 初始化彩金系統
         this.jackpot = {
             amount: GAME_CONFIG.JACKPOT_SYSTEM.BASE_AMOUNT,
             lastWin: 0
         };
         
-        // 新增：任務和成就系統
+        // 初始化任務和成就系統
         this.missions = GAME_CONFIG.MISSIONS.map(m => ({...m, progress: 0, completed: false}));
         this.achievements = GAME_CONFIG.ACHIEVEMENTS.map(a => ({...a, unlocked: false}));
         
-        // 新增：統計數據
+        // 初始化統計數據
         this.stats = {
             fishCaught: 0,
             totalShots: 0,
@@ -109,18 +172,40 @@ class FishingGame {
             bossesKilled: 0
         };
         
-        // 連擊系統
-        this.comboTimer = 0;
-        this.comboTimeLimit = 3000; // 3秒內要連續捕魚才算連擊
-        
-        this.init();
+        console.log('遊戲配置初始化完成');
     }
 
-    init() {
-        this.setupEventListeners();
-        this.initializeGame();
-        this.initializeUI();
-        this.showLoading();
+    // 顯示配置加載錯誤
+    showConfigError() {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            z-index: 10000;
+            max-width: 400px;
+        `;
+        errorDiv.innerHTML = `
+            <h3>遊戲初始化錯誤</h3>
+            <p>遊戲配置加載失敗，請重新載入頁面</p>
+            <button onclick="location.reload()" style="
+                background: white;
+                color: red;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-top: 10px;
+            ">重新載入頁面</button>
+        `;
+        document.body.appendChild(errorDiv);
     }
 
     initializeGame() {
