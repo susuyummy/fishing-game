@@ -146,10 +146,21 @@ class FishManager {
     }
 
     spawnBossFish() {
-        const bossType = Utils.randomInt(4, 5); // 鯊魚或鯨魚
+        // 選擇BOSS類型魚類索引
+        const bossTypeIndices = [];
+        GAME_CONFIG.FISH_TYPES.forEach((type, index) => {
+            if (type.special === 'boss') {
+                bossTypeIndices.push(index);
+            }
+        });
+        
+        const bossTypeIndex = bossTypeIndices.length > 0 ? 
+            bossTypeIndices[Utils.randomInt(0, bossTypeIndices.length - 1)] : 
+            4; // 默認使用鯊魚索引
+            
         const position = this.getRandomSpawnPosition();
         
-        const boss = new Fish(position.x, position.y, bossType);
+        const boss = new Fish(position.x, position.y, bossTypeIndex);
         boss.isBoss = true;
         boss.health = boss.score * 2; // Boss有更多血量
         boss.maxHealth = boss.health;
@@ -202,11 +213,11 @@ class FishManager {
         for (let i = 0; i < weights.length; i++) {
             random -= weights[i];
             if (random <= 0) {
-                return fishTypes[i];
+                return i; // 返回索引而不是對象
             }
         }
         
-        return fishTypes[0]; // 默認第一種魚
+        return 0; // 默認第一種魚的索引
     }
 
     getRandomSpawnPosition() {
@@ -483,11 +494,11 @@ class FishManager {
     // 新增：生成特殊魚類
     spawnSpecialFish(specialType) {
         const fishTypes = GAME_CONFIG.FISH_TYPES;
-        const specialFishType = fishTypes.find(type => type.special === specialType);
+        const specialFishIndex = fishTypes.findIndex(type => type.special === specialType);
         
-        if (specialFishType) {
+        if (specialFishIndex !== -1) {
             const position = this.getRandomSpawnPosition();
-            const fish = new Fish(position.x, position.y, specialFishType);
+            const fish = new Fish(position.x, position.y, specialFishIndex);
             this.fishes.push(fish);
             return fish;
         }

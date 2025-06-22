@@ -2000,18 +2000,12 @@ class FishingGame {
         const bossType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
         
         // 創建BOSS魚
-        const bossData = {
-            name: bossType.name,
-            size: bossType.size,
-            speed: bossType.speed,
-            color: bossType.color,
-            score: bossType.score,
-            health: bossType.health,
-            catchRate: 0.1, // BOSS很難捕獲
-            special: 'boss'
-        };
+        // 找到對應的BOSS魚類索引
+        const bossTypeIndex = GAME_CONFIG.FISH_TYPES.findIndex(type => 
+            type.special === 'boss' && type.name === bossType.name
+        );
         
-        const boss = new Fish(this.canvas.width / 2, this.canvas.height / 2, bossData);
+        const boss = new Fish(this.canvas.width / 2, this.canvas.height / 2, bossTypeIndex !== -1 ? bossTypeIndex : 9);
         this.fishManager.addBoss(boss);
         
         this.bossSystem.activeBoss = boss;

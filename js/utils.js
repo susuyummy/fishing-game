@@ -574,4 +574,9 @@ const GAME_CONFIG = {
     LIGHTNING_DURATION: 2000,
     LIGHTNING_TARGET_COUNT: 3,
     LIGHTNING_CHAIN_RANGE: 100
-}; 
+};
+
+// 調試信息
+console.log('GAME_CONFIG loaded:', GAME_CONFIG);
+console.log('FISH_TYPES count:', GAME_CONFIG.FISH_TYPES.length);
+console.log('First fish type:', GAME_CONFIG.FISH_TYPES[0]); 

@@ -4,8 +4,41 @@ class Fish {
         this.id = Math.random().toString(36).substr(2, 9); // 唯一ID
         this.x = x;
         this.y = y;
-        this.type = type;
-        this.typeData = GAME_CONFIG.FISH_TYPES[type];
+        
+        // 處理type參數 - 可能是索引或對象
+        if (typeof type === 'number') {
+            this.type = type;
+            this.typeData = GAME_CONFIG.FISH_TYPES[type];
+        } else if (typeof type === 'object' && type !== null) {
+            this.typeData = type;
+            this.type = GAME_CONFIG.FISH_TYPES.indexOf(type);
+        } else {
+            // 默認使用第一種魚
+            this.type = 0;
+            this.typeData = GAME_CONFIG.FISH_TYPES[0];
+        }
+        
+        // 確保typeData存在
+        if (!this.typeData) {
+            console.warn('魚類類型數據不存在，使用默認值', 'type:', type, 'GAME_CONFIG:', GAME_CONFIG);
+            this.typeData = {
+                name: '小魚',
+                size: 20,
+                speed: 1,
+                color: '#FFB6C1',
+                score: 2,
+                health: 1,
+                catchRate: 0.8
+            };
+        }
+        
+        // 調試信息
+        console.log('Fish created:', {
+            type: type,
+            typeData: this.typeData,
+            size: this.typeData.size
+        });
+        
         this.radius = this.typeData.size;
         this.speed = this.typeData.speed;
         this.color = this.typeData.color;

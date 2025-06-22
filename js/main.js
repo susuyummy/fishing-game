@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeGame() {
     try {
+        // 調試信息
+        console.log('開始初始化遊戲...');
+        console.log('GAME_CONFIG 是否存在:', typeof GAME_CONFIG !== 'undefined');
+        console.log('GAME_CONFIG.FISH_TYPES:', GAME_CONFIG?.FISH_TYPES?.length);
+        
         // 獲取畫布元素
         const canvas = document.getElementById('gameCanvas');
         if (!canvas) {
@@ -22,8 +27,9 @@ function initializeGame() {
         // 設置畫布大小
         setupCanvas(canvas);
 
-            // 創建遊戲實例
-    game = new FishingGame(canvas);
+        // 創建遊戲實例
+        console.log('創建遊戲實例...');
+        game = new FishingGame(canvas);
     
     // 設置賭注系統事件監聽器
     setupBetSystemListeners(game);
