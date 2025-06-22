@@ -32,12 +32,7 @@ class Fish {
             };
         }
         
-        // 調試信息
-        console.log('Fish created:', {
-            type: type,
-            typeData: this.typeData,
-            size: this.typeData.size
-        });
+        // 調試信息（已移除）
         
         this.radius = this.typeData.size;
         this.speed = this.typeData.speed;

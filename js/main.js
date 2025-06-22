@@ -3,15 +3,27 @@ let game = null;
 
 // 當DOM加載完成時初始化遊戲
 document.addEventListener('DOMContentLoaded', function() {
-    initializeGame();
+    // 延遲初始化，確保所有腳本都已加載
+    setTimeout(() => {
+        initializeGame();
+    }, 100);
 });
 
 function initializeGame() {
     try {
-        // 調試信息
-        console.log('開始初始化遊戲...');
-        console.log('GAME_CONFIG 是否存在:', typeof GAME_CONFIG !== 'undefined');
-        console.log('GAME_CONFIG.FISH_TYPES:', GAME_CONFIG?.FISH_TYPES?.length);
+        // 檢查必要的類和配置是否已加載
+        if (typeof GAME_CONFIG === 'undefined') {
+            throw new Error('GAME_CONFIG 未加載');
+        }
+        if (typeof Fish === 'undefined') {
+            throw new Error('Fish 類未加載');
+        }
+        if (typeof Cannon === 'undefined') {
+            throw new Error('Cannon 類未加載');
+        }
+        if (typeof FishingGame === 'undefined') {
+            throw new Error('FishingGame 類未加載');
+        }
         
         // 獲取畫布元素
         const canvas = document.getElementById('gameCanvas');
@@ -28,7 +40,6 @@ function initializeGame() {
         setupCanvas(canvas);
 
         // 創建遊戲實例
-        console.log('創建遊戲實例...');
         game = new FishingGame(canvas);
     
     // 設置賭注系統事件監聽器

@@ -5,9 +5,7 @@ class Cannon {
         this.y = y;
         this.level = 0;
         
-        // 調試信息
-        console.log('Cannon constructor - GAME_CONFIG:', typeof GAME_CONFIG);
-        console.log('Cannon constructor - CANNON_LEVELS:', GAME_CONFIG?.CANNON_LEVELS);
+        // 調試信息（已移除）
         
         // 確保GAME_CONFIG和CANNON_LEVELS存在
         if (!GAME_CONFIG || !GAME_CONFIG.CANNON_LEVELS) {

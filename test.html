@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>捕魚機測試</title>
+</head>
+<body>
+    <h1>捕魚機測試</h1>
+    <div id="test-output"></div>
+    
+    <script>
+        console.log('開始測試...');
+        
+        // 測試腳本加載
+        const scripts = [
+            'js/utils.js',
+            'js/fish.js', 
+            'js/cannon.js',
+            'js/bullet.js',
+            'js/fishManager.js',
+            'js/game.js',
+            'js/main.js'
+        ];
+        
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    console.log(`✅ ${src} 加載成功`);
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error(`❌ ${src} 加載失敗`);
+                    reject(new Error(`Failed to load ${src}`));
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        async function testScripts() {
+            try {
+                for (const script of scripts) {
+                    await loadScript(script);
+                    
+                    // 測試關鍵對象
+                    if (script === 'js/utils.js') {
+                        console.log('GAME_CONFIG 存在:', typeof GAME_CONFIG !== 'undefined');
+                        console.log('GAME_CONFIG.FISH_TYPES:', GAME_CONFIG?.FISH_TYPES?.length);
+                        console.log('GAME_CONFIG.CANNON_LEVELS:', GAME_CONFIG?.CANNON_LEVELS?.length);
+                    }
+                    
+                    if (script === 'js/fish.js') {
+                        console.log('Fish 類存在:', typeof Fish !== 'undefined');
+                        // 測試創建魚類
+                        try {
+                            const testFish = new Fish(100, 100, 0);
+                            console.log('✅ Fish 創建成功:', testFish.name, testFish.radius);
+                        } catch (e) {
+                            console.error('❌ Fish 創建失敗:', e);
+                        }
+                    }
+                    
+                    if (script === 'js/cannon.js') {
+                        console.log('Cannon 類存在:', typeof Cannon !== 'undefined');
+                        // 測試創建炮台
+                        try {
+                            const testCannon = new Cannon(100, 100);
+                            console.log('✅ Cannon 創建成功:', testCannon.power, testCannon.cost);
+                        } catch (e) {
+                            console.error('❌ Cannon 創建失敗:', e);
+                        }
+                    }
+                }
+                
+                console.log('🎉 所有腳本測試完成');
+                document.getElementById('test-output').innerHTML = '測試完成，請查看控制台';
+                
+            } catch (error) {
+                console.error('腳本加載失敗:', error);
+                document.getElementById('test-output').innerHTML = '測試失敗: ' + error.message;
+            }
+        }
+        
+        testScripts();
+    </script>
+</body>
+</html> 
