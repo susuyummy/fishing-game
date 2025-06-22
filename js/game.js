@@ -2263,13 +2263,13 @@ class FishingGame {
             const btn = document.getElementById(`${skillName}Btn`);
             if (btn) {
                 const skill = this.skills[skillName];
-                const config = GAME_CONFIG.SPECIAL_SKILLS[skillName.toUpperCase()];
+                const config = GAME_CONFIG?.SPECIAL_SKILLS?.[skillName.toUpperCase()];
                 
                 if (skill.cooldown > 0) {
                     btn.disabled = true;
                     btn.className = 'skill-btn cooling';
                     btn.textContent = `${btn.textContent.split('(')[0]}(${Math.ceil(skill.cooldown / 1000)}s)`;
-                } else if (this.coins < config.cost) {
+                } else if (config && this.coins < config.cost) {
                     btn.disabled = true;
                     btn.className = 'skill-btn';
                 } else {
@@ -2284,7 +2284,7 @@ class FishingGame {
             const btn = document.getElementById(`${itemName}Btn`);
             if (btn) {
                 const item = this.items[itemName];
-                const config = GAME_CONFIG.ITEMS[itemName.toUpperCase()];
+                const config = GAME_CONFIG?.ITEMS?.[itemName.toUpperCase()];
                 
                 if (item.active) {
                     btn.className = 'item-btn active';
@@ -2293,7 +2293,7 @@ class FishingGame {
                     } else if (item.uses > 0) {
                         btn.textContent = `${btn.textContent.split('(')[0]}(${item.uses}次)`;
                     }
-                } else if (this.coins < config.cost) {
+                } else if (config && this.coins < config.cost) {
                     btn.disabled = true;
                     btn.className = 'item-btn';
                 } else {
