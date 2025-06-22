@@ -1397,7 +1397,7 @@ class FishingGame {
     // 遊戲操作
     fire() {
         if (this.cannon.canFire() && this.score > 0) {
-            const bullet = this.cannon.fire();
+            const bullet = this.cannon.fire(this.currentBet);
             if (bullet) {
                 this.bullets.push(bullet);
                 this.addScore(-this.cannon.cost);
