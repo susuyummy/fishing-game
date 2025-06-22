@@ -1839,24 +1839,60 @@ class FishingGame {
     }
     
     createSkillButtons() {
+        console.log('創建技能按鈕，檢查GAME_CONFIG:', typeof GAME_CONFIG, GAME_CONFIG?.SPECIAL_SKILLS);
+        
         const skillPanel = document.createElement('div');
         skillPanel.id = 'skillPanel';
         skillPanel.className = 'skill-panel';
-        skillPanel.innerHTML = `
-            <h3>特殊技能</h3>
-            <button id="freezeBtn" class="skill-btn" data-skill="freeze">
-                ❄️ 冰凍 (${GAME_CONFIG.SPECIAL_SKILLS.FREEZE.cost}金)
-            </button>
-            <button id="bombBtn" class="skill-btn" data-skill="bomb">
-                💣 爆彈 (${GAME_CONFIG.SPECIAL_SKILLS.BOMB.cost}金)
-            </button>
-            <button id="laserBtn" class="skill-btn" data-skill="laser">
-                🔥 雷射 (${GAME_CONFIG.SPECIAL_SKILLS.LASER.cost}金)
-            </button>
-            <button id="netBtn" class="skill-btn" data-skill="net">
-                🕸️ 捕魚網 (${GAME_CONFIG.SPECIAL_SKILLS.NET.cost}金)
-            </button>
-        `;
+        
+        // 檢查GAME_CONFIG是否已加載
+        if (!GAME_CONFIG || !GAME_CONFIG.SPECIAL_SKILLS) {
+            console.warn('GAME_CONFIG.SPECIAL_SKILLS 未加載，使用默認值');
+            skillPanel.innerHTML = `
+                <h3>特殊技能</h3>
+                <button id="freezeBtn" class="skill-btn" data-skill="freeze">
+                    ❄️ 冰凍 (50金)
+                </button>
+                <button id="bombBtn" class="skill-btn" data-skill="bomb">
+                    💣 爆彈 (100金)
+                </button>
+                <button id="laserBtn" class="skill-btn" data-skill="laser">
+                    🔥 雷射 (200金)
+                </button>
+                <button id="netBtn" class="skill-btn" data-skill="net">
+                    🕸️ 捕魚網 (150金)
+                </button>
+            `;
+        } else {
+            const freezeCost = GAME_CONFIG.SPECIAL_SKILLS.FREEZE?.cost || 50;
+            const bombCost = GAME_CONFIG.SPECIAL_SKILLS.BOMB?.cost || 100;
+            const laserCost = GAME_CONFIG.SPECIAL_SKILLS.LASER?.cost || 200;
+            const netCost = GAME_CONFIG.SPECIAL_SKILLS.NET?.cost || 150;
+            
+            console.log('技能配置:', {
+                freezeCost,
+                bombCost,
+                laserCost,
+                netCost
+            });
+            
+            skillPanel.innerHTML = `
+                <h3>特殊技能</h3>
+                <button id="freezeBtn" class="skill-btn" data-skill="freeze">
+                    ❄️ 冰凍 (${freezeCost}金)
+                </button>
+                <button id="bombBtn" class="skill-btn" data-skill="bomb">
+                    💣 爆彈 (${bombCost}金)
+                </button>
+                <button id="laserBtn" class="skill-btn" data-skill="laser">
+                    🔥 雷射 (${laserCost}金)
+                </button>
+                <button id="netBtn" class="skill-btn" data-skill="net">
+                    🕸️ 捕魚網 (${netCost}金)
+                </button>
+            `;
+        }
+        
         document.body.appendChild(skillPanel);
         
         // 綁定事件
@@ -1866,30 +1902,58 @@ class FishingGame {
                 this.useSkill(skill);
             });
         });
+        
+        console.log('技能按鈕創建完成');
     }
     
     createItemButtons() {
+        console.log('創建道具按鈕，檢查GAME_CONFIG:', typeof GAME_CONFIG, GAME_CONFIG?.ITEMS);
+        
         const itemPanel = document.createElement('div');
         itemPanel.id = 'itemPanel';
         itemPanel.className = 'item-panel';
         
-        // 安全地獲取道具配置
-        const doubleScoreCost = GAME_CONFIG?.ITEMS?.DOUBLE_SCORE?.cost || 80;
-        const luckyShotCost = GAME_CONFIG?.ITEMS?.LUCKY_SHOT?.cost || 120;
-        const rapidFireCost = GAME_CONFIG?.ITEMS?.RAPID_FIRE?.cost || 60;
+        // 檢查GAME_CONFIG是否已加載
+        if (!GAME_CONFIG || !GAME_CONFIG.ITEMS) {
+            console.warn('GAME_CONFIG.ITEMS 未加載，使用默認值');
+            itemPanel.innerHTML = `
+                <h3>道具</h3>
+                <button id="doubleScoreBtn" class="item-btn" data-item="doubleScore">
+                    ⭐ 雙倍得分 (80金)
+                </button>
+                <button id="luckyShotBtn" class="item-btn" data-item="luckyShot">
+                    🍀 幸運一擊 (120金)
+                </button>
+                <button id="rapidFireBtn" class="item-btn" data-item="rapidFire">
+                    🔫 連發模式 (60金)
+                </button>
+            `;
+        } else {
+            // 安全地獲取道具配置
+            const doubleScoreCost = GAME_CONFIG.ITEMS.DOUBLE_SCORE?.cost || 80;
+            const luckyShotCost = GAME_CONFIG.ITEMS.LUCKY_SHOT?.cost || 120;
+            const rapidFireCost = GAME_CONFIG.ITEMS.RAPID_FIRE?.cost || 60;
+            
+            console.log('道具配置:', {
+                doubleScoreCost,
+                luckyShotCost,
+                rapidFireCost
+            });
+            
+            itemPanel.innerHTML = `
+                <h3>道具</h3>
+                <button id="doubleScoreBtn" class="item-btn" data-item="doubleScore">
+                    ⭐ 雙倍得分 (${doubleScoreCost}金)
+                </button>
+                <button id="luckyShotBtn" class="item-btn" data-item="luckyShot">
+                    🍀 幸運一擊 (${luckyShotCost}金)
+                </button>
+                <button id="rapidFireBtn" class="item-btn" data-item="rapidFire">
+                    🔫 連發模式 (${rapidFireCost}金)
+                </button>
+            `;
+        }
         
-        itemPanel.innerHTML = `
-            <h3>道具</h3>
-            <button id="doubleScoreBtn" class="item-btn" data-item="doubleScore">
-                ⭐ 雙倍得分 (${doubleScoreCost}金)
-            </button>
-            <button id="luckyShotBtn" class="item-btn" data-item="luckyShot">
-                🍀 幸運一擊 (${luckyShotCost}金)
-            </button>
-            <button id="rapidFireBtn" class="item-btn" data-item="rapidFire">
-                🔫 連發模式 (${rapidFireCost}金)
-            </button>
-        `;
         document.body.appendChild(itemPanel);
         
         // 綁定事件
@@ -1899,6 +1963,8 @@ class FishingGame {
                 this.useItem(item);
             });
         });
+        
+        console.log('道具按鈕創建完成');
     }
     
     createMissionPanel() {
