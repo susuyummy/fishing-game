@@ -182,6 +182,78 @@ class Utils {
         }
     }
 
+    // 創建冰凍效果
+    static createIceEffect() {
+        const iceOverlay = this.createElement('div', 'ice-effect');
+        iceOverlay.style.position = 'fixed';
+        iceOverlay.style.top = '0';
+        iceOverlay.style.left = '0';
+        iceOverlay.style.width = '100%';
+        iceOverlay.style.height = '100%';
+        iceOverlay.style.background = 'radial-gradient(circle, rgba(135,206,235,0.3) 0%, rgba(173,216,230,0.1) 100%)';
+        iceOverlay.style.pointerEvents = 'none';
+        iceOverlay.style.zIndex = '100';
+        document.body.appendChild(iceOverlay);
+        
+        setTimeout(() => {
+            this.removeElement(iceOverlay);
+        }, 5000);
+    }
+    
+    // 創建雷射效果
+    static createLaserEffect(startX, startY, endX, endY) {
+        const laser = this.createElement('div', 'laser-effect');
+        laser.style.position = 'absolute';
+        laser.style.left = startX + 'px';
+        laser.style.top = (startY - 25) + 'px';
+        laser.style.width = (endX - startX) + 'px';
+        laser.style.height = '50px';
+        laser.style.background = 'linear-gradient(90deg, transparent, #FF0000, #FFFF00, #FF0000, transparent)';
+        laser.style.boxShadow = '0 0 20px #FF0000';
+        laser.style.animation = 'laser-pulse 0.5s ease-in-out';
+        laser.style.zIndex = '90';
+        document.getElementById('gameArea').appendChild(laser);
+        
+        setTimeout(() => {
+            this.removeElement(laser);
+        }, 500);
+    }
+    
+    // 創建捕魚網效果
+    static createNetEffect(centerX, centerY, radius) {
+        const net = this.createElement('div', 'net-effect');
+        net.style.position = 'absolute';
+        net.style.left = (centerX - radius) + 'px';
+        net.style.top = (centerY - radius) + 'px';
+        net.style.width = (radius * 2) + 'px';
+        net.style.height = (radius * 2) + 'px';
+        net.style.border = '3px solid #8B4513';
+        net.style.borderRadius = '50%';
+        net.style.background = 'radial-gradient(circle, rgba(139,69,19,0.2) 0%, rgba(139,69,19,0.1) 100%)';
+        net.style.animation = 'net-expand 1s ease-out';
+        net.style.zIndex = '85';
+        
+        // 添加網格效果
+        for (let i = 0; i < 8; i++) {
+            const line = this.createElement('div');
+            line.style.position = 'absolute';
+            line.style.width = '100%';
+            line.style.height = '2px';
+            line.style.background = '#8B4513';
+            line.style.top = (i * radius / 4) + 'px';
+            line.style.left = '0';
+            line.style.transform = `rotate(${i * 22.5}deg)`;
+            line.style.transformOrigin = 'center';
+            net.appendChild(line);
+        }
+        
+        document.getElementById('gameArea').appendChild(net);
+        
+        setTimeout(() => {
+            this.removeElement(net);
+        }, 1000);
+    }
+
     // 創建連鎖反應效果 - 性能優化版，支援連續電擊
     static createChainLightning(startX, startY, endX, endY, intensity = 1, chainLevel = 0, isContinuous = false) {
         // 為連續電擊創建更細膩的閃電效果
@@ -316,80 +388,190 @@ class Utils {
 
 // 遊戲配置
 const GAME_CONFIG = {
-    // 炮台配置
-    CANNON: {
-        INITIAL_LEVEL: 1,
-        MAX_LEVEL: 10,
-        UPGRADE_COST_BASE: 100,
-        UPGRADE_COST_MULTIPLIER: 1.5,
-        DAMAGE_BASE: 10,
-        DAMAGE_MULTIPLIER: 1.2,
-        FIRE_RATE_BASE: 10,
-        FIRE_RATE_MULTIPLIER: 1.1
-    },
+    // 基礎設置
+    INITIAL_SCORE: 10000,
+    MAX_FISH_COUNT: 50,
+    MIN_FISH_COUNT: 20,
     
-    // 子彈配置
-    BULLET: {
-        SPEED: 8,
-        LIFETIME: 3000,
-        SIZE: 3
-    },
-    
-    // 魚類配置
-    FISH: {
-        MIN_COUNT: 40,
-        MAX_COUNT: 70,
-        SPAWN_RATE: 0.12,
-        SPEED_RANGE: [0.5, 3],
-        SCORE_MULTIPLIER: 1.2
-    },
-    
-    // 賭注系統配置
+    // 賭注系統
     BET_SYSTEM: {
-        INITIAL_COINS: 10000,  // 從5000增加到10000
-        DEFAULT_BET: 2,        // 從3減少到2，更省錢
+        INITIAL_COINS: 1000,
+        DEFAULT_BET: 5,
         MIN_BET: 1,
         MAX_BET: 100,
-        BET_OPTIONS: [1, 2, 3, 5, 10, 20, 50], // 保持現有選項
-        MIN_COINS_TO_PLAY: 1
+        BET_OPTIONS: [1, 2, 5, 10, 20, 50, 100]
     },
     
-    // 遊戲區域配置
-    GAME_AREA: {
-        WIDTH: 800,
-        HEIGHT: 600
-    },
-    
-    CANVAS_WIDTH: 980,
-    CANVAS_HEIGHT: 600,
+    // 魚類配置 - 擴展更多魚種
     FISH_TYPES: [
-        { name: '小魚', score: 2, speed: 1, size: 20, color: '#FFB6C1' },
-        { name: '中魚', score: 5, speed: 0.8, size: 30, color: '#87CEEB' },
-        { name: '大魚', score: 10, speed: 0.6, size: 40, color: '#98FB98' },
-        { name: '金魚', score: 20, speed: 0.5, size: 35, color: '#FFD700' },
-        { name: '鯊魚', score: 50, speed: 0.4, size: 60, color: '#708090' },
-        { name: '鯨魚', score: 100, speed: 0.3, size: 80, color: '#4169E1' }
+        { name: '小丑魚', size: 15, speed: 1.5, color: '#FF6B35', score: 2, health: 1, catchRate: 0.9 },
+        { name: '金魚', size: 20, speed: 1.2, color: '#FFD700', score: 5, health: 2, catchRate: 0.8 },
+        { name: '熱帶魚', size: 25, speed: 1.0, color: '#00CED1', score: 10, health: 3, catchRate: 0.7 },
+        { name: '比目魚', size: 30, speed: 0.8, color: '#8B4513', score: 20, health: 5, catchRate: 0.6 },
+        { name: '鯊魚', size: 50, speed: 0.6, color: '#708090', score: 50, health: 10, catchRate: 0.4 },
+        { name: '鯨魚', size: 80, speed: 0.4, color: '#2F4F4F', score: 100, health: 20, catchRate: 0.3 },
+        // 新增特殊魚種
+        { name: '爆炸魚', size: 35, speed: 1.0, color: '#FF4500', score: 30, health: 8, catchRate: 0.5, special: 'explosion' },
+        { name: '冰凍魚', size: 40, speed: 0.7, color: '#87CEEB', score: 40, health: 12, catchRate: 0.4, special: 'freeze' },
+        { name: '倍數魚', size: 45, speed: 0.5, color: '#9370DB', score: 60, health: 15, catchRate: 0.3, special: 'multiplier' },
+        { name: '龍王', size: 100, speed: 0.3, color: '#DC143C', score: 200, health: 50, catchRate: 0.2, special: 'boss' },
+        { name: '黃金龍', size: 120, speed: 0.2, color: '#FFD700', score: 500, health: 100, catchRate: 0.1, special: 'jackpot' }
     ],
+    
+    // 炮台等級配置
     CANNON_LEVELS: [
-        { level: 1, power: 1, cost: 1, color: '#FFD700' },
-        { level: 2, power: 2, cost: 2, color: '#FF6347' },
-        { level: 3, power: 3, cost: 3, color: '#32CD32' },
-        { level: 4, power: 4, cost: 4, color: '#FF69B4' },
-        { level: 5, power: 5, cost: 5, color: '#9370DB' }
+        { level: 0, power: 5, cost: 1, color: '#87CEEB', name: '初級炮' },
+        { level: 1, power: 10, cost: 2, color: '#4682B4', name: '中級炮' },
+        { level: 2, power: 20, cost: 5, color: '#1E90FF', name: '高級炮' },
+        { level: 3, power: 40, cost: 10, color: '#0000FF', name: '精英炮' },
+        { level: 4, power: 80, cost: 20, color: '#4B0082', name: '傳說炮' },
+        { level: 5, power: 150, cost: 50, color: '#8B008B', name: '神話炮' }
     ],
-    INITIAL_SCORE: 10000,
-    MIN_FISH_COUNT: 40,        // 進一步增加最少魚類數量
-    MAX_FISH_COUNT: 70,        // 進一步增加最多魚類數量
-    FISH_SPAWN_RATE: 0.12,     // 進一步提高魚類生成頻率
-    CHAIN_REACTION_RANGE: 150, // 增加連鎖反應範圍
-    CHAIN_DAMAGE_DECAY: 0.9,   // 減少連鎖傷害衰減
-    MAX_CHAIN_COUNT: 8,        // 增加最大連鎖次數
-    AUTO_LIGHTNING_MODE: true,  // 自動閃電模式
-    CONTINUOUS_LIGHTNING: true, // 啟用連續電擊模式
-    LIGHTNING_FIRE_RATE: 1,     // 連續電擊間隔（幀數）- 每幀都攻擊
-    LIGHTNING_TARGET_COUNT: 1,  // 每次電擊一個目標
-    LIGHTNING_DURATION: 50,     // 每次電擊持續時間（毫秒）- 大幅縮短
-    LIGHTNING_INTENSITY: 0.3,   // 連續電擊傷害強度 - 降低傷害讓魚更耐打
-    MAX_CONTINUOUS_TARGETS: 1,  // 同時只鎖定一個目標
-    LOCK_TARGET_UNTIL_DEAD: true // 鎖定目標直到死亡
+    
+    // 特殊技能系統
+    SPECIAL_SKILLS: {
+        FREEZE: {
+            name: '冰凍技能',
+            cost: 50,
+            duration: 5000, // 5秒
+            cooldown: 30000, // 30秒冷卻
+            description: '暫停所有魚的移動'
+        },
+        BOMB: {
+            name: '爆彈技能',
+            cost: 100,
+            radius: 150,
+            cooldown: 45000,
+            description: '範圍爆炸攻擊'
+        },
+        LASER: {
+            name: '雷射大砲',
+            cost: 200,
+            duration: 3000,
+            cooldown: 60000,
+            description: '蓄力雷射橫掃'
+        },
+        NET: {
+            name: '捕魚網',
+            cost: 150,
+            radius: 200,
+            cooldown: 50000,
+            description: '大範圍捕魚'
+        }
+    },
+    
+    // 道具系統
+    ITEMS: {
+        DOUBLE_SCORE: {
+            name: '雙倍得分',
+            cost: 80,
+            duration: 15000,
+            description: '15秒內得分翻倍'
+        },
+        LUCKY_SHOT: {
+            name: '幸運一擊',
+            cost: 120,
+            uses: 5,
+            description: '提高捕獲率到90%'
+        },
+        RAPID_FIRE: {
+            name: '連發模式',
+            cost: 60,
+            duration: 10000,
+            description: '10秒內射速翻倍'
+        }
+    },
+    
+    // BOSS系統
+    BOSS_SYSTEM: {
+        SPAWN_INTERVAL: 180000, // 3分鐘
+        BOSS_TYPES: [
+            {
+                name: '海妖王',
+                health: 500,
+                score: 1000,
+                size: 150,
+                speed: 0.3,
+                color: '#8B0000',
+                attacks: ['tentacle', 'whirlpool']
+            },
+            {
+                name: '深海霸主',
+                health: 800,
+                score: 2000,
+                size: 200,
+                speed: 0.2,
+                color: '#000080',
+                attacks: ['laser', 'summon']
+            }
+        ]
+    },
+    
+    // 彩金系統
+    JACKPOT_SYSTEM: {
+        BASE_AMOUNT: 10000,
+        ACCUMULATION_RATE: 0.01, // 每次射擊的1%進入獎池
+        WIN_PROBABILITY: 0.001, // 0.1%中獎機率
+        MULTIPLIERS: [1, 2, 5, 10, 50, 100] // 彩金倍數
+    },
+    
+    // 任務系統
+    MISSIONS: [
+        {
+            id: 'catch_fish_10',
+            name: '捕魚新手',
+            description: '捕獲10條魚',
+            target: 10,
+            reward: 100,
+            type: 'catch_count'
+        },
+        {
+            id: 'score_1000',
+            name: '得分達人',
+            description: '單局得分達到1000',
+            target: 1000,
+            reward: 200,
+            type: 'score'
+        },
+        {
+            id: 'combo_5',
+            name: '連擊高手',
+            description: '達成5連擊',
+            target: 5,
+            reward: 150,
+            type: 'combo'
+        }
+    ],
+    
+    // 成就系統
+    ACHIEVEMENTS: [
+        {
+            id: 'first_boss',
+            name: 'BOSS獵人',
+            description: '擊敗第一個BOSS',
+            reward: 500,
+            icon: '👑'
+        },
+        {
+            id: 'jackpot_winner',
+            name: '彩金幸運兒',
+            description: '獲得彩金獎勵',
+            reward: 1000,
+            icon: '💰'
+        },
+        {
+            id: 'master_fisher',
+            name: '捕魚大師',
+            description: '捕獲100條魚',
+            reward: 2000,
+            icon: '🎣'
+        }
+    ],
+    
+    // 閃電系統配置
+    AUTO_LIGHTNING_MODE: false,
+    CONTINUOUS_LIGHTNING: true,
+    LIGHTNING_DURATION: 2000,
+    LIGHTNING_TARGET_COUNT: 3,
+    LIGHTNING_CHAIN_RANGE: 100
 }; 

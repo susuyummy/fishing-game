@@ -165,14 +165,36 @@ class FishManager {
 
     getRandomFishType() {
         // 根據難度調整魚類類型概率
-        const weights = [
-            40 - this.difficultyLevel * 2, // 小魚
-            30 - this.difficultyLevel * 1, // 中魚
-            20 + this.difficultyLevel * 1, // 大魚
-            7 + this.difficultyLevel * 1,  // 金魚
-            2 + this.difficultyLevel * 0.5, // 鯊魚
-            1 + this.difficultyLevel * 0.3  // 鯨魚
-        ];
+        const fishTypes = GAME_CONFIG.FISH_TYPES;
+        const weights = [];
+        
+        // 為每種魚類分配權重
+        fishTypes.forEach((fishType, index) => {
+            let weight = 0;
+            
+            // 普通魚類權重
+            if (index <= 5) {
+                weight = 50 - index * 8 - this.difficultyLevel;
+            }
+            // 特殊魚類權重（較低）
+            else if (fishType.special) {
+                switch (fishType.special) {
+                    case 'explosion':
+                    case 'freeze':
+                    case 'multiplier':
+                        weight = 2 + this.difficultyLevel * 0.5;
+                        break;
+                    case 'boss':
+                        weight = 0.5 + this.difficultyLevel * 0.2;
+                        break;
+                    case 'jackpot':
+                        weight = 0.1 + this.difficultyLevel * 0.1;
+                        break;
+                }
+            }
+            
+            weights.push(Math.max(weight, 0));
+        });
         
         const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
         let random = Math.random() * totalWeight;
@@ -180,11 +202,11 @@ class FishManager {
         for (let i = 0; i < weights.length; i++) {
             random -= weights[i];
             if (random <= 0) {
-                return i;
+                return fishTypes[i];
             }
         }
         
-        return 0; // 默認小魚
+        return fishTypes[0]; // 默認第一種魚
     }
 
     getRandomSpawnPosition() {
@@ -307,7 +329,7 @@ class FishManager {
         
         bullets.forEach(bullet => {
             this.fishes.forEach(fish => {
-                if (!fish.isDead && bullet.checkCollision(fish)) {
+                if (!fish.isDead && !this.isFishOutOfScreen(fish) && bullet.checkCollision(fish)) {
                     // 檢查是否可以擊中這條魚
                     if (bullet.hit(fish)) {
                         collisions.push({ bullet, fish });
@@ -317,6 +339,17 @@ class FishManager {
         });
         
         return collisions;
+    }
+
+    // 新增：檢查魚是否在螢幕外
+    isFishOutOfScreen(fish) {
+        const margin = 50; // 增加邊距，確保魚明顯離開螢幕才不能被擊中
+        return (
+            fish.x + fish.radius < -margin ||
+            fish.x - fish.radius > this.canvas.width + margin ||
+            fish.y + fish.radius < -margin ||
+            fish.y - fish.radius > this.canvas.height + margin
+        );
     }
 
     // 擊中魚類
@@ -378,7 +411,7 @@ class FishManager {
         let closestDistance = maxDistance;
         
         this.fishes.forEach(fish => {
-            if (!fish.isDead) {
+            if (!fish.isDead && !this.isFishOutOfScreen(fish)) {
                 const distance = Utils.getDistance(x, y, fish.x, fish.y);
                 if (distance < closestDistance) {
                     closestFish = fish;
@@ -393,7 +426,7 @@ class FishManager {
     // 獲取指定範圍內的所有魚
     getFishesInRange(x, y, range) {
         return this.fishes.filter(fish => {
-            if (fish.isDead) return false;
+            if (fish.isDead || this.isFishOutOfScreen(fish)) return false;
             const distance = Utils.getDistance(x, y, fish.x, fish.y);
             return distance <= range;
         });
@@ -416,6 +449,75 @@ class FishManager {
         this.fishes = [];
         this.fishGroups = [];
         this.currentBoss = null;
+    }
+
+    // 新增：添加BOSS
+    addBoss(boss) {
+        this.currentBoss = boss;
+        this.fishes.push(boss);
+    }
+    
+    // 新增：移除魚類
+    removeFish(fish) {
+        const index = this.fishes.indexOf(fish);
+        if (index > -1) {
+            this.fishes.splice(index, 1);
+            
+            // 如果是BOSS，清除BOSS狀態
+            if (fish === this.currentBoss) {
+                this.currentBoss = null;
+            }
+        }
+    }
+    
+    // 新增：檢查是否有活躍的BOSS
+    hasActiveBoss() {
+        return this.currentBoss !== null && this.fishes.includes(this.currentBoss);
+    }
+    
+    // 新增：獲取BOSS
+    getBoss() {
+        return this.currentBoss;
+    }
+    
+    // 新增：生成特殊魚類
+    spawnSpecialFish(specialType) {
+        const fishTypes = GAME_CONFIG.FISH_TYPES;
+        const specialFishType = fishTypes.find(type => type.special === specialType);
+        
+        if (specialFishType) {
+            const position = this.getRandomSpawnPosition();
+            const fish = new Fish(position.x, position.y, specialFishType);
+            this.fishes.push(fish);
+            return fish;
+        }
+        
+        return null;
+    }
+    
+    // 新增：獲取特定類型的魚類
+    getFishesByType(fishType) {
+        return this.fishes.filter(fish => fish.type === fishType);
+    }
+    
+    // 新增：獲取特殊魚類
+    getSpecialFishes() {
+        return this.fishes.filter(fish => fish.special);
+    }
+    
+    // 新增：冰凍所有魚類
+    freezeAllFishes(duration) {
+        this.fishes.forEach(fish => {
+            fish.freeze(duration);
+        });
+    }
+    
+    // 新增：獲取範圍內的魚類（用於技能）
+    getFishesInRadius(centerX, centerY, radius) {
+        return this.fishes.filter(fish => {
+            const distance = Utils.getDistance(fish.x, fish.y, centerX, centerY);
+            return distance <= radius;
+        });
     }
 
     // 重置管理器

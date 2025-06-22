@@ -87,7 +87,7 @@ function setupCanvas(canvas) {
     const containerRect = container.getBoundingClientRect();
     
     // 設置畫布大小以適應容器
-    const aspectRatio = GAME_CONFIG.CANVAS_WIDTH / GAME_CONFIG.CANVAS_HEIGHT;
+    const aspectRatio = 980 / 600; // 固定寬高比
     let canvasWidth = containerRect.width;
     let canvasHeight = containerRect.height;
     
@@ -103,8 +103,8 @@ function setupCanvas(canvas) {
     canvas.style.height = canvasHeight + 'px';
     
     // 設置畫布實際大小（用於繪製）
-    canvas.width = GAME_CONFIG.CANVAS_WIDTH;
-    canvas.height = GAME_CONFIG.CANVAS_HEIGHT;
+    canvas.width = 980;
+    canvas.height = 600;
     
     // 啟用圖像平滑
     const ctx = canvas.getContext('2d');

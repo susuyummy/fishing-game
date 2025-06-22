@@ -11,6 +11,10 @@ class Fish {
         this.color = this.typeData.color;
         this.score = this.typeData.score;
         this.name = this.typeData.name;
+        this.health = this.typeData.health || 1; // 血量系統
+        this.maxHealth = this.health;
+        this.catchRate = this.typeData.catchRate || 0.5; // 捕獲率
+        this.special = this.typeData.special || null; // 特殊能力
         
         // 移動相關
         this.vx = Utils.random(-this.speed, this.speed);
@@ -40,10 +44,13 @@ class Fish {
         this.timeOutOfBounds = 0;
         
         // 新增：生命值系統 - 增加生命值讓魚更耐打
-        this.maxHealth = Math.max(this.score * 2, this.score + 10); // 大幅增加生命值
-        this.health = this.maxHealth;
         this.isInvulnerable = false;
         this.invulnerabilityTimer = 0;
+        
+        // 生成時的特殊效果
+        if (this.special) {
+            this.glowIntensity = 0.5;
+        }
     }
 
     update() {
@@ -455,5 +462,50 @@ class Fish {
     dealChainDamage(target, damage) {
         const result = target.takeDamage(damage);
         return result.killed;
+    }
+
+    // 冰凍效果
+    freeze(duration = 3000) {
+        this.isFrozen = true;
+        this.freezeTimer = duration;
+    }
+    
+    // 檢查是否被捕獲（基於捕獲率）
+    checkCatch() {
+        return Math.random() < this.catchRate;
+    }
+    
+    // 觸發特殊能力
+    triggerSpecialAbility() {
+        switch (this.special) {
+            case 'explosion':
+                return { type: 'explosion', radius: 100, damage: this.score };
+            case 'freeze':
+                return { type: 'freeze', duration: 5000 };
+            case 'multiplier':
+                return { type: 'multiplier', value: 2 };
+            case 'jackpot':
+                return { type: 'jackpot', amount: this.score * 10 };
+            default:
+                return null;
+        }
+    }
+
+    // 獲取邊界框（用於碰撞檢測）
+    getBounds() {
+        return {
+            x: this.x - this.radius,
+            y: this.y - this.radius,
+            width: this.radius * 2,
+            height: this.radius * 2
+        };
+    }
+
+    // 檢查是否在螢幕內
+    isOnScreen(canvas, margin = 50) {
+        return this.x > -this.radius - margin && 
+               this.x < canvas.width + this.radius + margin &&
+               this.y > -this.radius - margin && 
+               this.y < canvas.height + this.radius + margin;
     }
 } 

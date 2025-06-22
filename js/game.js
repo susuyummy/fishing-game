@@ -51,12 +51,75 @@ class FishingGame {
             currentCombo: 0
         };
         
+        // 新增：特殊技能系統
+        this.skills = {
+            freeze: { 
+                cooldown: 0, 
+                active: false, 
+                duration: 0,
+                maxCooldown: GAME_CONFIG.SPECIAL_SKILLS.FREEZE.cooldown
+            },
+            bomb: { 
+                cooldown: 0,
+                maxCooldown: GAME_CONFIG.SPECIAL_SKILLS.BOMB.cooldown
+            },
+            laser: { 
+                cooldown: 0, 
+                active: false, 
+                duration: 0,
+                maxCooldown: GAME_CONFIG.SPECIAL_SKILLS.LASER.cooldown
+            },
+            net: { 
+                cooldown: 0,
+                maxCooldown: GAME_CONFIG.SPECIAL_SKILLS.NET.cooldown
+            }
+        };
+        
+        // 新增：道具系統
+        this.items = {
+            doubleScore: { active: false, duration: 0 },
+            luckyShot: { active: false, uses: 0 },
+            rapidFire: { active: false, duration: 0 }
+        };
+        
+        // 新增：BOSS系統
+        this.bossSystem = {
+            nextSpawnTime: Date.now() + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL,
+            activeBoss: null,
+            bossHealth: 0,
+            maxBossHealth: 0
+        };
+        
+        // 新增：彩金系統
+        this.jackpot = {
+            amount: GAME_CONFIG.JACKPOT_SYSTEM.BASE_AMOUNT,
+            lastWin: 0
+        };
+        
+        // 新增：任務和成就系統
+        this.missions = GAME_CONFIG.MISSIONS.map(m => ({...m, progress: 0, completed: false}));
+        this.achievements = GAME_CONFIG.ACHIEVEMENTS.map(a => ({...a, unlocked: false}));
+        
+        // 新增：統計數據
+        this.stats = {
+            fishCaught: 0,
+            totalShots: 0,
+            combo: 0,
+            maxCombo: 0,
+            bossesKilled: 0
+        };
+        
+        // 連擊系統
+        this.comboTimer = 0;
+        this.comboTimeLimit = 3000; // 3秒內要連續捕魚才算連擊
+        
         this.init();
     }
 
     init() {
         this.setupEventListeners();
         this.initializeGame();
+        this.initializeUI();
         this.showLoading();
     }
 
@@ -957,7 +1020,7 @@ class FishingGame {
         // 造成持續傷害 - 使用賭注的一部分作為傷害值
         setTimeout(() => {
             if (!target.isDead) {
-                const damage = Math.max(1, Math.floor(this.currentBet * 0.5)); // 賭注的50%作為傷害值
+                const damage = Math.max(1, this.currentBet); // 連續閃電傷害等於賭注
                 const hitResult = this.fishManager.hitFish(target, damage);
                 
                 if (hitResult.score > 0) {
@@ -1015,8 +1078,8 @@ class FishingGame {
 
     // 新增：選擇閃電攻擊目標
     selectLightningTargets(fishes, count) {
-        // 優先攻擊高分魚類
-        const sortedFishes = fishes.filter(fish => !fish.isDead)
+        // 優先攻擊高分魚類，但排除螢幕外的魚
+        const sortedFishes = fishes.filter(fish => !fish.isDead && !this.fishManager.isFishOutOfScreen(fish))
             .sort((a, b) => b.score - a.score);
         
         return sortedFishes.slice(0, count);
@@ -1035,7 +1098,7 @@ class FishingGame {
         // 直接造成傷害
         setTimeout(() => {
             if (!target.isDead) {
-                const damage = Math.max(1, this.cannon.power * 0.5); // 降低閃電傷害
+                const damage = Math.max(1, this.currentBet); // 閃電傷害等於賭注
                 const hitResult = this.fishManager.hitFish(target, damage);
                 
                 if (hitResult.score > 0) {
@@ -1397,6 +1460,8 @@ class FishingGame {
     // 遊戲操作
     fire() {
         if (this.cannon.canFire() && this.score > 0) {
+            // 傳遞當前賭注作為傷害值
+            console.log(`發射子彈 - 當前賭注: ${this.currentBet}`);
             const bullet = this.cannon.fire(this.currentBet);
             if (bullet) {
                 this.bullets.push(bullet);
@@ -1660,5 +1725,625 @@ class FishingGame {
         this.isRunning = false;
         // 清理事件監聽器
         // 這裡可以添加更多清理邏輯
+    }
+
+    // 新增：初始化UI
+    initializeUI() {
+        // 創建技能按鈕
+        this.createSkillButtons();
+        
+        // 創建道具按鈕
+        this.createItemButtons();
+        
+        // 創建任務面板
+        this.createMissionPanel();
+        
+        // 創建成就面板
+        this.createAchievementPanel();
+        
+        // 更新所有UI
+        this.updateUI();
+    }
+    
+    createSkillButtons() {
+        const skillPanel = document.createElement('div');
+        skillPanel.id = 'skillPanel';
+        skillPanel.className = 'skill-panel';
+        skillPanel.innerHTML = `
+            <h3>特殊技能</h3>
+            <button id="freezeBtn" class="skill-btn" data-skill="freeze">
+                ❄️ 冰凍 (${GAME_CONFIG.SPECIAL_SKILLS.FREEZE.cost}金)
+            </button>
+            <button id="bombBtn" class="skill-btn" data-skill="bomb">
+                💣 爆彈 (${GAME_CONFIG.SPECIAL_SKILLS.BOMB.cost}金)
+            </button>
+            <button id="laserBtn" class="skill-btn" data-skill="laser">
+                🔥 雷射 (${GAME_CONFIG.SPECIAL_SKILLS.LASER.cost}金)
+            </button>
+            <button id="netBtn" class="skill-btn" data-skill="net">
+                🕸️ 捕魚網 (${GAME_CONFIG.SPECIAL_SKILLS.NET.cost}金)
+            </button>
+        `;
+        document.body.appendChild(skillPanel);
+        
+        // 綁定事件
+        document.querySelectorAll('.skill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const skill = e.target.dataset.skill;
+                this.useSkill(skill);
+            });
+        });
+    }
+    
+    createItemButtons() {
+        const itemPanel = document.createElement('div');
+        itemPanel.id = 'itemPanel';
+        itemPanel.className = 'item-panel';
+        itemPanel.innerHTML = `
+            <h3>道具</h3>
+            <button id="doubleScoreBtn" class="item-btn" data-item="doubleScore">
+                ⭐ 雙倍得分 (${GAME_CONFIG.ITEMS.DOUBLE_SCORE.cost}金)
+            </button>
+            <button id="luckyShotBtn" class="item-btn" data-item="luckyShot">
+                🍀 幸運一擊 (${GAME_CONFIG.ITEMS.LUCKY_SHOT.cost}金)
+            </button>
+            <button id="rapidFireBtn" class="item-btn" data-item="rapidFire">
+                🔫 連發模式 (${GAME_CONFIG.ITEMS.RAPID_FIRE.cost}金)
+            </button>
+        `;
+        document.body.appendChild(itemPanel);
+        
+        // 綁定事件
+        document.querySelectorAll('.item-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const item = e.target.dataset.item;
+                this.useItem(item);
+            });
+        });
+    }
+    
+    createMissionPanel() {
+        const missionPanel = document.createElement('div');
+        missionPanel.id = 'missionPanel';
+        missionPanel.className = 'mission-panel';
+        missionPanel.innerHTML = `
+            <h3>任務</h3>
+            <div id="missionList"></div>
+        `;
+        document.body.appendChild(missionPanel);
+    }
+    
+    createAchievementPanel() {
+        const achievementPanel = document.createElement('div');
+        achievementPanel.id = 'achievementPanel';
+        achievementPanel.className = 'achievement-panel';
+        achievementPanel.innerHTML = `
+            <h3>成就</h3>
+            <div id="achievementList"></div>
+        `;
+        document.body.appendChild(achievementPanel);
+    }
+    
+    // 新增：使用技能
+    useSkill(skillName) {
+        const skill = this.skills[skillName];
+        const config = GAME_CONFIG.SPECIAL_SKILLS[skillName.toUpperCase()];
+        
+        if (!config) return;
+        
+        // 檢查冷卻時間
+        if (skill.cooldown > 0) {
+            this.showMessage(`技能冷卻中，還需 ${Math.ceil(skill.cooldown / 1000)} 秒`);
+            return;
+        }
+        
+        // 檢查金幣
+        if (this.coins < config.cost) {
+            this.showMessage('金幣不足！');
+            return;
+        }
+        
+        // 扣除金幣
+        this.coins -= config.cost;
+        
+        // 執行技能
+        switch (skillName) {
+            case 'freeze':
+                this.activateFreeze();
+                break;
+            case 'bomb':
+                this.activateBomb();
+                break;
+            case 'laser':
+                this.activateLaser();
+                break;
+            case 'net':
+                this.activateNet();
+                break;
+        }
+        
+        // 設置冷卻時間
+        skill.cooldown = config.cooldown;
+        
+        this.updateUI();
+    }
+    
+    activateFreeze() {
+        this.skills.freeze.active = true;
+        this.skills.freeze.duration = GAME_CONFIG.SPECIAL_SKILLS.FREEZE.duration;
+        
+        // 冰凍所有魚
+        this.fishManager.fishes.forEach(fish => {
+            fish.freeze(GAME_CONFIG.SPECIAL_SKILLS.FREEZE.duration);
+        });
+        
+        this.showMessage('冰凍技能啟動！');
+        Utils.createIceEffect();
+    }
+    
+    activateBomb() {
+        const bombRadius = GAME_CONFIG.SPECIAL_SKILLS.BOMB.radius;
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // 創建爆炸效果
+        Utils.createExplosion(centerX, centerY);
+        
+        // 傷害範圍內的魚
+        this.fishManager.fishes.forEach(fish => {
+            const distance = Utils.getDistance(fish.x, fish.y, centerX, centerY);
+            if (distance <= bombRadius) {
+                const damage = this.currentBet * 2; // 爆彈傷害是賭注的2倍
+                if (fish.takeDamage(damage)) {
+                    this.handleFishCaught(fish);
+                }
+            }
+        });
+        
+        this.showMessage('爆彈技能啟動！');
+    }
+    
+    activateLaser() {
+        this.skills.laser.active = true;
+        this.skills.laser.duration = GAME_CONFIG.SPECIAL_SKILLS.LASER.duration;
+        
+        this.showMessage('雷射蓄力中...');
+        
+        // 3秒後發射雷射
+        setTimeout(() => {
+            this.fireLaser();
+        }, 1000);
+    }
+    
+    fireLaser() {
+        const laserY = this.canvas.height / 2;
+        
+        // 創建雷射效果
+        Utils.createLaserEffect(0, laserY, this.canvas.width, laserY);
+        
+        // 傷害雷射路徑上的所有魚
+        this.fishManager.fishes.forEach(fish => {
+            if (Math.abs(fish.y - laserY) <= 50) { // 雷射寬度50px
+                const damage = this.currentBet * 3; // 雷射傷害是賭注的3倍
+                if (fish.takeDamage(damage)) {
+                    this.handleFishCaught(fish);
+                }
+            }
+        });
+        
+        this.skills.laser.active = false;
+        this.showMessage('雷射發射！');
+    }
+    
+    activateNet() {
+        const netRadius = GAME_CONFIG.SPECIAL_SKILLS.NET.radius;
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // 創建捕魚網效果
+        Utils.createNetEffect(centerX, centerY, netRadius);
+        
+        // 捕獲範圍內的魚
+        this.fishManager.fishes.forEach(fish => {
+            const distance = Utils.getDistance(fish.x, fish.y, centerX, centerY);
+            if (distance <= netRadius) {
+                // 捕魚網有更高的捕獲率
+                if (Math.random() < 0.8) {
+                    this.handleFishCaught(fish);
+                }
+            }
+        });
+        
+        this.showMessage('捕魚網展開！');
+    }
+    
+    // 新增：使用道具
+    useItem(itemName) {
+        const config = GAME_CONFIG.ITEMS[itemName.toUpperCase()];
+        
+        if (!config) return;
+        
+        // 檢查金幣
+        if (this.coins < config.cost) {
+            this.showMessage('金幣不足！');
+            return;
+        }
+        
+        // 扣除金幣
+        this.coins -= config.cost;
+        
+        // 執行道具效果
+        switch (itemName) {
+            case 'doubleScore':
+                this.items.doubleScore.active = true;
+                this.items.doubleScore.duration = config.duration;
+                this.showMessage('雙倍得分啟動！');
+                break;
+            case 'luckyShot':
+                this.items.luckyShot.active = true;
+                this.items.luckyShot.uses = config.uses;
+                this.showMessage('幸運一擊啟動！');
+                break;
+            case 'rapidFire':
+                this.items.rapidFire.active = true;
+                this.items.rapidFire.duration = config.duration;
+                this.showMessage('連發模式啟動！');
+                break;
+        }
+        
+        this.updateUI();
+    }
+    
+    // 新增：生成BOSS
+    spawnBoss() {
+        const bossTypes = GAME_CONFIG.BOSS_SYSTEM.BOSS_TYPES;
+        const bossType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+        
+        // 創建BOSS魚
+        const bossData = {
+            name: bossType.name,
+            size: bossType.size,
+            speed: bossType.speed,
+            color: bossType.color,
+            score: bossType.score,
+            health: bossType.health,
+            catchRate: 0.1, // BOSS很難捕獲
+            special: 'boss'
+        };
+        
+        const boss = new Fish(this.canvas.width / 2, this.canvas.height / 2, bossData);
+        this.fishManager.addBoss(boss);
+        
+        this.bossSystem.activeBoss = boss;
+        this.bossSystem.bossHealth = bossType.health;
+        this.bossSystem.maxBossHealth = bossType.health;
+        
+        this.showMessage(`🚨 ${bossType.name} 出現了！`);
+        
+        // 設置下次BOSS生成時間
+        this.bossSystem.nextSpawnTime = Date.now() + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL;
+    }
+    
+    // 新增：檢查彩金
+    checkJackpot() {
+        const jackpotConfig = GAME_CONFIG.JACKPOT_SYSTEM;
+        
+        if (Math.random() < jackpotConfig.WIN_PROBABILITY) {
+            const multiplier = jackpotConfig.MULTIPLIERS[
+                Math.floor(Math.random() * jackpotConfig.MULTIPLIERS.length)
+            ];
+            const winAmount = this.jackpot.amount * multiplier;
+            
+            this.coins += winAmount;
+            this.jackpot.lastWin = winAmount;
+            
+            this.showMessage(`🎉 彩金中獎！獲得 ${winAmount} 金幣！`);
+            
+            // 重置彩金獎池
+            this.jackpot.amount = jackpotConfig.BASE_AMOUNT;
+            
+            // 解鎖成就
+            this.unlockAchievement('jackpot_winner');
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // 新增：顯示消息
+    showMessage(message, duration = 2000) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'game-message';
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+        
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, duration);
+    }
+    
+    // 新增：更新任務進度
+    updateMissionProgress(type, value) {
+        this.missions.forEach(mission => {
+            if (mission.type === type && !mission.completed) {
+                mission.progress += value;
+                if (mission.progress >= mission.target) {
+                    mission.completed = true;
+                    this.coins += mission.reward;
+                    this.showMessage(`🎉 任務完成：${mission.name}！獲得 ${mission.reward} 金幣！`);
+                }
+            }
+        });
+        
+        this.updateMissionUI();
+    }
+    
+    // 新增：解鎖成就
+    unlockAchievement(achievementId) {
+        const achievement = this.achievements.find(a => a.id === achievementId);
+        if (achievement && !achievement.unlocked) {
+            achievement.unlocked = true;
+            this.coins += achievement.reward;
+            this.showMessage(`🏆 成就解鎖：${achievement.name}！獲得 ${achievement.reward} 金幣！`);
+            this.updateAchievementUI();
+        }
+    }
+    
+    // 新增：更新任務UI
+    updateMissionUI() {
+        const missionList = document.getElementById('missionList');
+        if (!missionList) return;
+        
+        missionList.innerHTML = '';
+        this.missions.forEach(mission => {
+            const missionDiv = document.createElement('div');
+            missionDiv.className = `mission-item ${mission.completed ? 'completed' : ''}`;
+            missionDiv.innerHTML = `
+                <div class="mission-name">${mission.name}</div>
+                <div class="mission-description">${mission.description}</div>
+                <div class="mission-progress">${mission.progress}/${mission.target}</div>
+            `;
+            missionList.appendChild(missionDiv);
+        });
+    }
+    
+    // 新增：更新成就UI
+    updateAchievementUI() {
+        const achievementList = document.getElementById('achievementList');
+        if (!achievementList) return;
+        
+        achievementList.innerHTML = '';
+        this.achievements.forEach(achievement => {
+            const achievementDiv = document.createElement('div');
+            achievementDiv.className = `achievement-item ${achievement.unlocked ? 'unlocked' : ''}`;
+            achievementDiv.innerHTML = `
+                <div class="achievement-name">${achievement.icon} ${achievement.name}</div>
+                <div class="achievement-description">${achievement.description}</div>
+                <div class="achievement-reward">獎勵: ${achievement.reward} 金幣</div>
+            `;
+            achievementList.appendChild(achievementDiv);
+        });
+    }
+    
+    // 新增：處理魚類被捕獲
+    handleFishCaught(fish) {
+        // 檢查特殊能力
+        if (fish.special) {
+            const specialEffect = fish.triggerSpecialAbility();
+            if (specialEffect) {
+                this.handleSpecialEffect(specialEffect, fish);
+            }
+        }
+        
+        // 計算得分
+        let score = fish.score;
+        
+        // 道具效果：雙倍得分
+        if (this.items.doubleScore.active) {
+            score *= 2;
+        }
+        
+        // 添加得分
+        this.addScore(score);
+        
+        // 獲得金幣
+        this.coins += Math.floor(score / 2);
+        
+        // 更新統計
+        this.stats.fishCaught++;
+        this.stats.combo++;
+        this.comboTimer = this.comboTimeLimit;
+        
+        // 更新任務進度
+        this.updateMissionProgress('catch_count', 1);
+        this.updateMissionProgress('score', score);
+        this.updateMissionProgress('combo', this.stats.combo);
+        
+        // 檢查成就
+        if (this.stats.fishCaught >= 100) {
+            this.unlockAchievement('master_fisher');
+        }
+        
+        // 檢查彩金
+        this.checkJackpot();
+        
+        // 移除魚類
+        this.fishManager.removeFish(fish);
+        
+        // 創建得分效果
+        Utils.createScoreFloat(fish.x, fish.y, score);
+        
+        // 創建粒子效果
+        const particles = Utils.createParticles(fish.x, fish.y, 8, fish.color);
+        this.particles.push(...particles);
+    }
+    
+    // 新增：處理特殊效果
+    handleSpecialEffect(effect, fish) {
+        switch (effect.type) {
+            case 'explosion':
+                // 爆炸效果
+                Utils.createExplosion(fish.x, fish.y);
+                this.fishManager.fishes.forEach(otherFish => {
+                    const distance = Utils.getDistance(fish.x, fish.y, otherFish.x, otherFish.y);
+                    if (distance <= effect.radius && otherFish !== fish) {
+                        if (otherFish.takeDamage(effect.damage)) {
+                            this.handleFishCaught(otherFish);
+                        }
+                    }
+                });
+                break;
+                
+            case 'freeze':
+                // 冰凍效果
+                this.fishManager.fishes.forEach(otherFish => {
+                    otherFish.freeze(effect.duration);
+                });
+                Utils.createIceEffect();
+                this.showMessage('所有魚類被冰凍！');
+                break;
+                
+            case 'multiplier':
+                // 倍數效果
+                this.items.doubleScore.active = true;
+                this.items.doubleScore.duration = 10000;
+                this.showMessage(`得分 ${effect.value} 倍！`);
+                break;
+                
+            case 'jackpot':
+                // 彩金效果
+                this.coins += effect.amount;
+                this.showMessage(`🎰 彩金獎勵：${effect.amount} 金幣！`);
+                this.unlockAchievement('jackpot_winner');
+                break;
+        }
+    }
+    
+    // 重寫：更新UI方法，包含新功能
+    updateUI() {
+        // 更新基本信息
+        const scoreElement = document.getElementById('score');
+        const coinsElement = document.getElementById('coins');
+        const betElement = document.getElementById('currentBet');
+        
+        if (scoreElement) scoreElement.textContent = Utils.formatNumber(this.score);
+        if (coinsElement) coinsElement.textContent = Utils.formatNumber(this.coins);
+        if (betElement) betElement.textContent = this.currentBet;
+        
+        // 更新技能按鈕狀態
+        Object.keys(this.skills).forEach(skillName => {
+            const btn = document.getElementById(`${skillName}Btn`);
+            if (btn) {
+                const skill = this.skills[skillName];
+                const config = GAME_CONFIG.SPECIAL_SKILLS[skillName.toUpperCase()];
+                
+                if (skill.cooldown > 0) {
+                    btn.disabled = true;
+                    btn.className = 'skill-btn cooling';
+                    btn.textContent = `${btn.textContent.split('(')[0]}(${Math.ceil(skill.cooldown / 1000)}s)`;
+                } else if (this.coins < config.cost) {
+                    btn.disabled = true;
+                    btn.className = 'skill-btn';
+                } else {
+                    btn.disabled = false;
+                    btn.className = 'skill-btn';
+                }
+            }
+        });
+        
+        // 更新道具按鈕狀態
+        Object.keys(this.items).forEach(itemName => {
+            const btn = document.getElementById(`${itemName}Btn`);
+            if (btn) {
+                const item = this.items[itemName];
+                const config = GAME_CONFIG.ITEMS[itemName.toUpperCase()];
+                
+                if (item.active) {
+                    btn.className = 'item-btn active';
+                    if (item.duration > 0) {
+                        btn.textContent = `${btn.textContent.split('(')[0]}(${Math.ceil(item.duration / 1000)}s)`;
+                    } else if (item.uses > 0) {
+                        btn.textContent = `${btn.textContent.split('(')[0]}(${item.uses}次)`;
+                    }
+                } else if (this.coins < config.cost) {
+                    btn.disabled = true;
+                    btn.className = 'item-btn';
+                } else {
+                    btn.disabled = false;
+                    btn.className = 'item-btn';
+                }
+            }
+        });
+        
+        // 更新彩金顯示
+        this.updateJackpotDisplay();
+        
+        // 更新連擊顯示
+        this.updateComboDisplay();
+        
+        // 更新BOSS血量條
+        this.updateBossHealthBar();
+    }
+    
+    // 新增：更新彩金顯示
+    updateJackpotDisplay() {
+        let jackpotDisplay = document.getElementById('jackpotDisplay');
+        if (!jackpotDisplay) {
+            jackpotDisplay = document.createElement('div');
+            jackpotDisplay.id = 'jackpotDisplay';
+            jackpotDisplay.className = 'jackpot-display';
+            document.body.appendChild(jackpotDisplay);
+        }
+        
+        jackpotDisplay.textContent = `🎰 彩金: ${Utils.formatNumber(this.jackpot.amount)}`;
+    }
+    
+    // 新增：更新連擊顯示
+    updateComboDisplay() {
+        let comboDisplay = document.getElementById('comboDisplay');
+        if (this.stats.combo > 1) {
+            if (!comboDisplay) {
+                comboDisplay = document.createElement('div');
+                comboDisplay.id = 'comboDisplay';
+                comboDisplay.className = 'combo-display';
+                document.body.appendChild(comboDisplay);
+            }
+            
+            comboDisplay.textContent = `${this.stats.combo} 連擊！`;
+            comboDisplay.className = 'combo-display active';
+        } else if (comboDisplay) {
+            comboDisplay.className = 'combo-display';
+        }
+    }
+    
+    // 新增：更新BOSS血量條
+    updateBossHealthBar() {
+        let bossHealthBar = document.getElementById('bossHealthBar');
+        
+        if (this.bossSystem.activeBoss) {
+            if (!bossHealthBar) {
+                bossHealthBar = document.createElement('div');
+                bossHealthBar.id = 'bossHealthBar';
+                bossHealthBar.className = 'boss-health-bar';
+                bossHealthBar.innerHTML = `
+                    <div class="boss-name">BOSS</div>
+                    <div class="boss-health-fill" id="bossHealthFill"></div>
+                `;
+                document.body.appendChild(bossHealthBar);
+            }
+            
+            const healthPercent = (this.bossSystem.bossHealth / this.bossSystem.maxBossHealth) * 100;
+            const healthFill = document.getElementById('bossHealthFill');
+            if (healthFill) {
+                healthFill.style.width = healthPercent + '%';
+            }
+            
+            bossHealthBar.style.display = 'block';
+        } else if (bossHealthBar) {
+            bossHealthBar.style.display = 'none';
+        }
     }
 } 

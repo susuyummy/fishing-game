@@ -799,4 +799,408 @@ body {
 
 .insufficient-coins {
     animation: warningFlash 0.5s ease-in-out 2;
+}
+
+/* 新增：特殊技能面板 */
+.skill-panel {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 200px;
+    z-index: 1000;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.skill-panel h3 {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: #FFD700;
+    font-size: 16px;
+}
+
+.skill-btn {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+    padding: 8px 12px;
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.skill-btn:hover {
+    background: linear-gradient(45deg, #45a049, #4CAF50);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.skill-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.skill-btn.cooling {
+    background: linear-gradient(45deg, #FF6B6B, #FF5252);
+}
+
+/* 新增：道具面板 */
+.item-panel {
+    position: fixed;
+    top: 10px;
+    right: 230px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #9370DB;
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 200px;
+    z-index: 1000;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.item-panel h3 {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: #9370DB;
+    font-size: 16px;
+}
+
+.item-btn {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+    padding: 8px 12px;
+    background: linear-gradient(45deg, #9370DB, #8A2BE2);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.item-btn:hover {
+    background: linear-gradient(45deg, #8A2BE2, #9370DB);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.item-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.item-btn.active {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    animation: pulse 1s infinite;
+}
+
+/* 新增：任務面板 */
+.mission-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00CED1;
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 250px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.mission-panel h3 {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: #00CED1;
+    font-size: 16px;
+}
+
+.mission-item {
+    margin: 8px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    border-left: 3px solid #00CED1;
+}
+
+.mission-item.completed {
+    border-left-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.mission-name {
+    font-weight: bold;
+    color: #FFD700;
+    font-size: 12px;
+}
+
+.mission-description {
+    font-size: 10px;
+    color: #CCC;
+    margin: 2px 0;
+}
+
+.mission-progress {
+    font-size: 10px;
+    color: #00CED1;
+}
+
+/* 新增：成就面板 */
+.achievement-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 280px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 250px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.achievement-panel h3 {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: #FFD700;
+    font-size: 16px;
+}
+
+.achievement-item {
+    margin: 8px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    border-left: 3px solid #666;
+}
+
+.achievement-item.unlocked {
+    border-left-color: #FFD700;
+    background: rgba(255, 215, 0, 0.2);
+    animation: achievement-glow 2s ease-in-out;
+}
+
+.achievement-name {
+    font-weight: bold;
+    color: #FFD700;
+    font-size: 12px;
+}
+
+.achievement-description {
+    font-size: 10px;
+    color: #CCC;
+    margin: 2px 0;
+}
+
+.achievement-reward {
+    font-size: 10px;
+    color: #4CAF50;
+}
+
+/* 新增：特效動畫 */
+@keyframes laser-pulse {
+    0% { opacity: 0; transform: scaleY(0.5); }
+    50% { opacity: 1; transform: scaleY(1.2); }
+    100% { opacity: 0; transform: scaleY(0.5); }
+}
+
+@keyframes net-expand {
+    0% { 
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+}
+
+@keyframes ice-shimmer {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+    100% { opacity: 0.3; }
+}
+
+.ice-effect {
+    animation: ice-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes achievement-glow {
+    0% { box-shadow: 0 0 5px #FFD700; }
+    50% { box-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700; }
+    100% { box-shadow: 0 0 5px #FFD700; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* 新增：BOSS血量條 */
+.boss-health-bar {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #FF0000;
+    border-radius: 10px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.boss-health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF0000, #FF6B6B);
+    transition: width 0.3s ease;
+    border-radius: 8px;
+}
+
+.boss-name {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #FFD700;
+    font-weight: bold;
+    font-size: 14px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* 新增：彩金顯示 */
+.jackpot-display {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    border: 3px solid #FF6B35;
+    border-radius: 15px;
+    padding: 10px 20px;
+    color: #8B0000;
+    font-weight: bold;
+    font-size: 18px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    animation: jackpot-shine 2s ease-in-out infinite;
+}
+
+@keyframes jackpot-shine {
+    0%, 100% { box-shadow: 0 0 10px #FFD700; }
+    50% { box-shadow: 0 0 25px #FFD700, 0 0 35px #FFA500; }
+}
+
+/* 新增：連擊顯示 */
+.combo-display {
+    position: fixed;
+    top: 120px;
+    right: 20px;
+    background: rgba(255, 0, 0, 0.9);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 8px 15px;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    z-index: 1000;
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+
+.combo-display.active {
+    transform: scale(1);
+    animation: combo-pulse 0.5s ease-in-out;
+}
+
+@keyframes combo-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* 新增：消息提示 */
+.game-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 20px 30px;
+    color: #FFD700;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 2000;
+    animation: message-appear 0.5s ease-out;
+}
+
+@keyframes message-appear {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .skill-panel, .item-panel {
+        position: relative;
+        width: 100%;
+        margin: 5px 0;
+        top: auto;
+        right: auto;
+    }
+    
+    .mission-panel, .achievement-panel {
+        position: relative;
+        width: 100%;
+        margin: 5px 0;
+        bottom: auto;
+        left: auto;
+        max-height: 150px;
+    }
+    
+    .boss-health-bar {
+        width: 90%;
+        top: 20px;
+    }
+    
+    .jackpot-display {
+        top: 50px;
+        font-size: 14px;
+        padding: 8px 15px;
+    }
 } 
