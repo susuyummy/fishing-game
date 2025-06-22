@@ -1601,6 +1601,7 @@ class FishingGame {
         // 檢查雙倍得分道具
         if (this.items.doubleScore.active) {
             finalPoints *= 2;
+            console.log(`雙倍得分生效！原始分數: ${points}, 最終分數: ${finalPoints}`);
         }
         
         this.score += finalPoints;
@@ -1871,16 +1872,22 @@ class FishingGame {
         const itemPanel = document.createElement('div');
         itemPanel.id = 'itemPanel';
         itemPanel.className = 'item-panel';
+        
+        // 安全地獲取道具配置
+        const doubleScoreCost = GAME_CONFIG?.ITEMS?.DOUBLE_SCORE?.cost || 80;
+        const luckyShotCost = GAME_CONFIG?.ITEMS?.LUCKY_SHOT?.cost || 120;
+        const rapidFireCost = GAME_CONFIG?.ITEMS?.RAPID_FIRE?.cost || 60;
+        
         itemPanel.innerHTML = `
             <h3>道具</h3>
             <button id="doubleScoreBtn" class="item-btn" data-item="doubleScore">
-                ⭐ 雙倍得分 (${GAME_CONFIG.ITEMS.DOUBLE_SCORE.cost}金)
+                ⭐ 雙倍得分 (${doubleScoreCost}金)
             </button>
             <button id="luckyShotBtn" class="item-btn" data-item="luckyShot">
-                🍀 幸運一擊 (${GAME_CONFIG.ITEMS.LUCKY_SHOT.cost}金)
+                🍀 幸運一擊 (${luckyShotCost}金)
             </button>
             <button id="rapidFireBtn" class="item-btn" data-item="rapidFire">
-                🔫 連發模式 (${GAME_CONFIG.ITEMS.RAPID_FIRE.cost}金)
+                🔫 連發模式 (${rapidFireCost}金)
             </button>
         `;
         document.body.appendChild(itemPanel);
@@ -2067,6 +2074,8 @@ class FishingGame {
     
     // 新增：使用道具
     useItem(itemName) {
+        console.log(`使用道具: ${itemName}`);
+        
         // 檢查GAME_CONFIG是否存在
         if (!GAME_CONFIG || !GAME_CONFIG.ITEMS) {
             console.error('GAME_CONFIG.ITEMS 未定義');
@@ -2086,6 +2095,9 @@ class FishingGame {
             return;
         }
         
+        console.log(`道具配置:`, config);
+        console.log(`當前金幣: ${this.coins}, 需要金幣: ${config.cost}`);
+        
         // 檢查金幣
         if (this.coins < config.cost) {
             this.showMessage('金幣不足！');
@@ -2094,23 +2106,28 @@ class FishingGame {
         
         // 扣除金幣
         this.coins -= config.cost;
+        console.log(`扣除金幣後餘額: ${this.coins}`);
         
         // 執行道具效果
         switch (itemName) {
             case 'doubleScore':
                 this.items.doubleScore.active = true;
                 this.items.doubleScore.duration = config.duration;
+                console.log('雙倍得分啟動！持續時間:', config.duration);
                 this.showMessage('雙倍得分啟動！');
                 break;
             case 'luckyShot':
                 this.items.luckyShot.active = true;
                 this.items.luckyShot.uses = config.uses;
+                console.log('幸運一擊啟動！次數:', config.uses);
                 this.showMessage('幸運一擊啟動！');
                 break;
             case 'rapidFire':
                 this.items.rapidFire.active = true;
                 this.items.rapidFire.duration = config.duration;
                 this.cannon.setRapidFire(true);
+                console.log('連發模式啟動！持續時間:', config.duration);
+                console.log('炮台射速已調整為:', this.cannon.fireRate);
                 this.showMessage('連發模式啟動！');
                 break;
         }
