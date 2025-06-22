@@ -85,18 +85,35 @@ class FishingGame {
     waitForGameConfig() {
         return new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 50; // 最多等待5秒
+            const maxAttempts = 100; // 增加到10秒
             
             const checkConfig = () => {
                 attempts++;
                 
-                if (typeof GAME_CONFIG !== 'undefined' && GAME_CONFIG.SPECIAL_SKILLS && GAME_CONFIG.ITEMS) {
-                    console.log('GAME_CONFIG 加載完成');
+                console.log(`檢查配置 (${attempts}/${maxAttempts}):`, {
+                    'typeof GAME_CONFIG': typeof GAME_CONFIG,
+                    'GAME_CONFIG存在': typeof GAME_CONFIG !== 'undefined',
+                    'SPECIAL_SKILLS存在': typeof GAME_CONFIG !== 'undefined' && !!GAME_CONFIG.SPECIAL_SKILLS,
+                    'ITEMS存在': typeof GAME_CONFIG !== 'undefined' && !!GAME_CONFIG.ITEMS,
+                    'FISH_TYPES存在': typeof GAME_CONFIG !== 'undefined' && !!GAME_CONFIG.FISH_TYPES
+                });
+                
+                if (typeof GAME_CONFIG !== 'undefined' && 
+                    GAME_CONFIG.SPECIAL_SKILLS && 
+                    GAME_CONFIG.ITEMS && 
+                    GAME_CONFIG.FISH_TYPES &&
+                    GAME_CONFIG.CANNON_LEVELS) {
+                    console.log('✅ GAME_CONFIG 加載完成');
                     resolve();
                 } else if (attempts >= maxAttempts) {
+                    console.error('❌ GAME_CONFIG 加載超時');
+                    console.error('當前GAME_CONFIG狀態:', {
+                        defined: typeof GAME_CONFIG !== 'undefined',
+                        config: typeof GAME_CONFIG !== 'undefined' ? GAME_CONFIG : 'undefined'
+                    });
                     reject(new Error('GAME_CONFIG 加載超時'));
                 } else {
-                    console.log(`等待GAME_CONFIG加載... (${attempts}/${maxAttempts})`);
+                    console.log(`⏳ 等待GAME_CONFIG加載... (${attempts}/${maxAttempts})`);
                     setTimeout(checkConfig, 100);
                 }
             };
