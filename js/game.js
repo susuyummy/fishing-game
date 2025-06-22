@@ -1827,9 +1827,25 @@ class FishingGame {
     // 新增：使用技能
     useSkill(skillName) {
         const skill = this.skills[skillName];
+        
+        // 檢查GAME_CONFIG是否存在
+        if (!GAME_CONFIG || !GAME_CONFIG.SPECIAL_SKILLS) {
+            console.error('GAME_CONFIG.SPECIAL_SKILLS 未定義');
+            return;
+        }
+        
         const config = GAME_CONFIG.SPECIAL_SKILLS[skillName.toUpperCase()];
         
-        if (!config) return;
+        if (!config) {
+            console.error(`技能配置不存在: ${skillName}`);
+            return;
+        }
+        
+        // 檢查cost屬性
+        if (typeof config.cost === 'undefined') {
+            console.error(`技能 ${skillName} 缺少cost屬性`);
+            return;
+        }
         
         // 檢查冷卻時間
         if (skill.cooldown > 0) {
@@ -1959,9 +1975,24 @@ class FishingGame {
     
     // 新增：使用道具
     useItem(itemName) {
+        // 檢查GAME_CONFIG是否存在
+        if (!GAME_CONFIG || !GAME_CONFIG.ITEMS) {
+            console.error('GAME_CONFIG.ITEMS 未定義');
+            return;
+        }
+        
         const config = GAME_CONFIG.ITEMS[itemName.toUpperCase()];
         
-        if (!config) return;
+        if (!config) {
+            console.error(`道具配置不存在: ${itemName}`);
+            return;
+        }
+        
+        // 檢查cost屬性
+        if (typeof config.cost === 'undefined') {
+            console.error(`道具 ${itemName} 缺少cost屬性`);
+            return;
+        }
         
         // 檢查金幣
         if (this.coins < config.cost) {

@@ -4,7 +4,36 @@ class Cannon {
         this.x = x;
         this.y = y;
         this.level = 0;
-        this.levelData = GAME_CONFIG.CANNON_LEVELS[this.level];
+        
+        // 調試信息
+        console.log('Cannon constructor - GAME_CONFIG:', typeof GAME_CONFIG);
+        console.log('Cannon constructor - CANNON_LEVELS:', GAME_CONFIG?.CANNON_LEVELS);
+        
+        // 確保GAME_CONFIG和CANNON_LEVELS存在
+        if (!GAME_CONFIG || !GAME_CONFIG.CANNON_LEVELS) {
+            console.error('GAME_CONFIG 或 CANNON_LEVELS 未定義');
+            // 使用默認值
+            this.levelData = {
+                power: 5,
+                cost: 1,
+                color: '#87CEEB',
+                name: '初級炮'
+            };
+        } else {
+            this.levelData = GAME_CONFIG.CANNON_LEVELS[this.level];
+        }
+        
+        // 確保levelData存在
+        if (!this.levelData) {
+            console.error('炮台等級數據不存在，使用默認值');
+            this.levelData = {
+                power: 5,
+                cost: 1,
+                color: '#87CEEB',
+                name: '初級炮'
+            };
+        }
+        
         this.power = this.levelData.power;
         this.cost = this.levelData.cost;
         this.color = this.levelData.color;
@@ -246,9 +275,22 @@ class Cannon {
     }
 
     upgrade() {
+        if (!GAME_CONFIG || !GAME_CONFIG.CANNON_LEVELS) {
+            console.error('無法升級：GAME_CONFIG.CANNON_LEVELS 未定義');
+            return false;
+        }
+        
         if (this.level < GAME_CONFIG.CANNON_LEVELS.length - 1) {
             this.level++;
             this.levelData = GAME_CONFIG.CANNON_LEVELS[this.level];
+            
+            // 確保levelData存在
+            if (!this.levelData) {
+                console.error('升級失敗：等級數據不存在');
+                this.level--; // 回退等級
+                return false;
+            }
+            
             this.power = this.levelData.power;
             this.cost = this.levelData.cost;
             this.color = this.levelData.color;
@@ -270,8 +312,18 @@ class Cannon {
     }
 
     getUpgradeCost() {
+        if (!GAME_CONFIG || !GAME_CONFIG.CANNON_LEVELS) {
+            console.error('無法計算升級費用：GAME_CONFIG.CANNON_LEVELS 未定義');
+            return 1000; // 返回默認費用
+        }
+        
         if (this.level < GAME_CONFIG.CANNON_LEVELS.length - 1) {
-            return GAME_CONFIG.CANNON_LEVELS[this.level + 1].cost * 1000;
+            const nextLevel = GAME_CONFIG.CANNON_LEVELS[this.level + 1];
+            if (!nextLevel || typeof nextLevel.cost === 'undefined') {
+                console.error('下一級炮台數據不存在或缺少cost屬性');
+                return 1000;
+            }
+            return nextLevel.cost * 1000;
         }
         return 0;
     }
