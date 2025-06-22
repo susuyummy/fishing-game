@@ -11,6 +11,17 @@ class FishingGame {
             return;
         }
         
+        // 詳細檢查配置結構
+        console.log('GAME_CONFIG 詳細檢查:', {
+            exists: typeof GAME_CONFIG !== 'undefined',
+            hasItems: !!(GAME_CONFIG && GAME_CONFIG.ITEMS),
+            hasSkills: !!(GAME_CONFIG && GAME_CONFIG.SPECIAL_SKILLS),
+            itemsKeys: GAME_CONFIG?.ITEMS ? Object.keys(GAME_CONFIG.ITEMS) : '無',
+            skillsKeys: GAME_CONFIG?.SPECIAL_SKILLS ? Object.keys(GAME_CONFIG.SPECIAL_SKILLS) : '無',
+            doubleScoreConfig: GAME_CONFIG?.ITEMS?.DOUBLE_SCORE,
+            freezeConfig: GAME_CONFIG?.SPECIAL_SKILLS?.FREEZE
+        });
+        
         console.log('GAME_CONFIG 檢查通過，開始初始化遊戲');
         
         // 遊戲狀態
@@ -34,6 +45,11 @@ class FishingGame {
         // 輸入處理
         this.mouse = { x: 0, y: 0, isDown: false };
         this.keys = {};
+        
+        // 自動射擊系統
+        this.autoShoot = false;
+        this.autoShootInterval = 800; // 自動射擊間隔(毫秒)
+        this.lastAutoShoot = 0;
         
         // 性能監控
         this.fps = 60;
@@ -222,7 +238,7 @@ class FishingGame {
         document.addEventListener('keyup', (e) => this.handleKeyUp(e));
         
         // UI按鈕事件
-        document.getElementById('cannonUpgrade').addEventListener('click', () => this.upgradeCannon());
+        document.getElementById('autoShootBtn').addEventListener('click', () => this.toggleAutoShoot());
         document.getElementById('pauseBtn').addEventListener('click', () => this.togglePause());
         document.getElementById('restartBtn').addEventListener('click', () => this.restart());
         
@@ -297,6 +313,21 @@ class FishingGame {
     }
 
     update(isLowFrameRate = false) {
+        const currentTime = Date.now();
+        
+        // 自動射擊邏輯
+        if (this.autoShoot && currentTime - this.lastAutoShoot >= this.autoShootInterval) {
+            if (this.coins >= this.currentBet) {
+                this.fire();
+                this.lastAutoShoot = currentTime;
+            }
+        }
+        
+        // 更新炮台傷害為當前賭注
+        if (this.cannon) {
+            this.cannon.setPower(this.currentBet);
+        }
+        
         // 更新炮台
         this.cannon.update();
         
@@ -1611,14 +1642,13 @@ class FishingGame {
         }
     }
 
-    upgradeCannon() {
-        if (this.cannon.canUpgrade(this.score)) {
-            const cost = this.cannon.getUpgradeCost();
-            if (this.cannon.upgrade()) {
-                this.addScore(-cost);
-                // this.addScreenShake(10);
-            }
+    toggleAutoShoot() {
+        this.autoShoot = !this.autoShoot;
+        const autoShootBtn = document.getElementById('autoShootBtn');
+        if (autoShootBtn) {
+            autoShootBtn.textContent = this.autoShoot ? '自動射擊: 開' : '自動射擊: 關';
         }
+        this.showMessage(this.autoShoot ? '自動射擊已開啟' : '自動射擊已關閉');
     }
 
     togglePause() {
@@ -1781,50 +1811,7 @@ class FishingGame {
         }
     }
 
-    updateUI() {
-        // 安全檢查DOM元素是否存在
-        const scoreValue = document.getElementById('scoreValue');
-        const cannonLevelValue = document.getElementById('cannonLevelValue');
-        const coinsValue = document.getElementById('coinsValue');
-        const betValue = document.getElementById('betValue');
-        const damageValue = document.getElementById('damageValue');
-        const decreaseBetBtn = document.getElementById('decreaseBet');
-        const increaseBetBtn = document.getElementById('increaseBet');
-        const attackStatus = document.getElementById('attackStatus');
-        
-        if (scoreValue) scoreValue.textContent = Utils.formatNumber(this.score);
-        if (cannonLevelValue && this.cannon) cannonLevelValue.textContent = this.cannon.level + 1;
-        
-        // 更新賭注和金幣顯示
-        if (coinsValue) coinsValue.textContent = Utils.formatNumber(this.coins);
-        if (betValue) betValue.textContent = this.currentBet;
-        if (damageValue) damageValue.textContent = this.currentBet;
-        
-        // 更新賭注按鈕狀態
-        if (decreaseBetBtn && increaseBetBtn) {
-            const minBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MIN_BET : 1;
-            const maxBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MAX_BET : 100;
-            
-            decreaseBetBtn.disabled = this.currentBet <= minBet;
-            increaseBetBtn.disabled = this.currentBet >= maxBet;
-        }
-        
-        // 檢查是否有足夠金幣進行下次攻擊
-        if (attackStatus) {
-            const canAttack = this.coins >= this.currentBet;
-            attackStatus.textContent = canAttack ? '可攻擊' : '金幣不足';
-            attackStatus.style.color = canAttack ? '#00FF00' : '#FF4444';
-        }
-        
-        const upgradeBtn = document.getElementById('cannonUpgrade');
-        if (this.cannon.canUpgrade(this.score)) {
-            upgradeBtn.disabled = false;
-            upgradeBtn.textContent = `升級炮台 (${Utils.formatNumber(this.cannon.getUpgradeCost())})`;
-        } else {
-            upgradeBtn.disabled = true;
-            upgradeBtn.textContent = this.cannon.level >= GAME_CONFIG.CANNON_LEVELS.length - 1 ? '已滿級' : '金幣不足';
-        }
-    }
+    // 舊的updateUI方法已移除，使用下面的新版本
 
     gameOver() {
         this.gameState = 'gameOver';
@@ -2469,14 +2456,46 @@ class FishingGame {
     
     // 重寫：更新UI方法，包含新功能
     updateUI() {
-        // 更新基本信息
-        const scoreElement = document.getElementById('score');
-        const coinsElement = document.getElementById('coins');
-        const betElement = document.getElementById('currentBet');
+        // 更新基本信息 - 支援兩種UI佈局
+        const scoreElement = document.getElementById('score') || document.getElementById('scoreValue');
+        const coinsElement = document.getElementById('coins') || document.getElementById('coinsValue');
+        const betElement = document.getElementById('currentBet') || document.getElementById('betValue');
         
         if (scoreElement) scoreElement.textContent = Utils.formatNumber(this.score);
         if (coinsElement) coinsElement.textContent = Utils.formatNumber(this.coins);
         if (betElement) betElement.textContent = this.currentBet;
+        
+        // 更新其他舊版本UI元素
+        const cannonLevelValue = document.getElementById('cannonLevelValue');
+        const damageValue = document.getElementById('damageValue');
+        const decreaseBetBtn = document.getElementById('decreaseBet');
+        const increaseBetBtn = document.getElementById('increaseBet');
+        const attackStatus = document.getElementById('attackStatus');
+        
+        if (cannonLevelValue && this.cannon) cannonLevelValue.textContent = this.cannon.level + 1;
+        if (damageValue) damageValue.textContent = this.currentBet;
+        
+        // 更新賭注按鈕狀態
+        if (decreaseBetBtn && increaseBetBtn) {
+            const minBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MIN_BET : 1;
+            const maxBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MAX_BET : 100;
+            
+            decreaseBetBtn.disabled = this.currentBet <= minBet;
+            increaseBetBtn.disabled = this.currentBet >= maxBet;
+        }
+        
+        // 檢查是否有足夠金幣進行下次攻擊
+        if (attackStatus) {
+            const canAttack = this.coins >= this.currentBet;
+            attackStatus.textContent = canAttack ? '可攻擊' : '金幣不足';
+            attackStatus.style.color = canAttack ? '#00FF00' : '#FF4444';
+        }
+        
+        // 更新自動射擊按鈕
+        const autoShootBtn = document.getElementById('autoShootBtn');
+        if (autoShootBtn) {
+            autoShootBtn.textContent = this.autoShoot ? '自動射擊: 開' : '自動射擊: 關';
+        }
         
         // 更新技能按鈕狀態
         const skillButtons = {

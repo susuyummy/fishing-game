@@ -36,6 +36,9 @@ class Cannon {
         this.cost = this.levelData.cost;
         this.color = this.levelData.color;
         
+        // 傷害將由賭注決定，不再使用等級系統
+        this.basePower = this.power;
+        
         // 瞄準相關
         this.targetX = 0;
         this.targetY = 0;
@@ -634,5 +637,10 @@ class Cannon {
         } else {
             this.resetFireRate();
         }
+    }
+    
+    // 設置炮台傷害（基於賭注）
+    setPower(betAmount) {
+        this.power = betAmount;
     }
 } 

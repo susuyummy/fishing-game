@@ -66,16 +66,7 @@ function initializeGame() {
             }
         });
 
-        // 設置頁面可見性API
-        document.addEventListener('visibilitychange', () => {
-            if (game) {
-                if (document.hidden) {
-                    game.pause();
-                } else {
-                    // 當頁面重新可見時，不自動恢復遊戲，讓玩家手動繼續
-                }
-            }
-        });
+        // 頁面可見性API已移除 - 不再自動暫停遊戲
 
         // 設置頁面關閉前的確認
         window.addEventListener('beforeunload', (e) => {

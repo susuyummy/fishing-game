@@ -398,8 +398,8 @@ const GAME_CONFIG = {
         INITIAL_COINS: 1000,
         DEFAULT_BET: 5,
         MIN_BET: 1,
-        MAX_BET: 100,
-        BET_OPTIONS: [1, 2, 5, 10, 20, 50, 100]
+        MAX_BET: 1000,
+        BET_OPTIONS: [1, 2, 5, 10, 20, 50, 100, 200, 300, 500, 1000]
     },
     
     // 魚類配置 - 擴展更多魚種
