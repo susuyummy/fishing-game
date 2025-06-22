@@ -364,8 +364,17 @@ class FishManager {
     }
 
     // 擊中魚類
-    hitFish(fish, damage) {
-        const result = fish.takeDamage(damage);
+    hitFish(fish, damage, guaranteedKill = false) {
+        let result;
+        
+        if (guaranteedKill) {
+            // 幸運一擊：直接擊殺魚類
+            result = fish.die();
+            result.killed = true;
+        } else {
+            result = fish.takeDamage(damage);
+        }
+        
         if (result.killed) {
             // 魚類死亡，給予分數和金幣獎勵
             const coinReward = this.calculateCoinReward(fish);
@@ -520,6 +529,15 @@ class FishManager {
     freezeAllFishes(duration) {
         this.fishes.forEach(fish => {
             fish.freeze(duration);
+        });
+    }
+    
+    // 新增：解除所有魚類的冰凍狀態
+    unfreezeAllFish() {
+        this.fishes.forEach(fish => {
+            if (fish.unfreeze) {
+                fish.unfreeze();
+            }
         });
     }
     

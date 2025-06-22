@@ -621,4 +621,18 @@ class Cannon {
     getHeatLevel() {
         return this.barrelHeat;
     }
+    
+    // 新增：重置射速（用於連發模式結束）
+    resetFireRate() {
+        this.fireRate = 500; // 恢復默認射速
+    }
+    
+    // 新增：設置連發模式
+    setRapidFire(enabled) {
+        if (enabled) {
+            this.fireRate = 250; // 連發模式下射速翻倍
+        } else {
+            this.resetFireRate();
+        }
+    }
 } 

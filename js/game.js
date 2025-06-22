@@ -264,6 +264,18 @@ class FishingGame {
             this.updateAutoLightning();
         }
         
+        // 更新技能冷卻時間
+        this.updateSkillCooldowns();
+        
+        // 更新道具持續時間
+        this.updateItemDurations();
+        
+        // 更新連擊計時器
+        this.updateComboTimer();
+        
+        // 檢查BOSS生成
+        this.checkBossSpawn();
+        
         // 更新子彈
         this.updateBullets();
         
@@ -342,12 +354,85 @@ class FishingGame {
         }
     }
 
+    // 新增：更新技能冷卻時間
+    updateSkillCooldowns() {
+        const deltaTime = 16; // 假設60FPS，每幀約16ms
+        
+        Object.keys(this.skills).forEach(skillName => {
+            const skill = this.skills[skillName];
+            if (skill.cooldown > 0) {
+                skill.cooldown = Math.max(0, skill.cooldown - deltaTime);
+            }
+            
+            // 更新技能持續時間
+            if (skill.active && skill.duration > 0) {
+                skill.duration = Math.max(0, skill.duration - deltaTime);
+                if (skill.duration === 0) {
+                    skill.active = false;
+                    // 結束特殊技能效果
+                    if (skillName === 'freeze') {
+                        this.fishManager.unfreezeAllFish();
+                    }
+                }
+            }
+        });
+    }
+
+    // 新增：更新道具持續時間
+    updateItemDurations() {
+        const deltaTime = 16; // 假設60FPS，每幀約16ms
+        
+        Object.keys(this.items).forEach(itemName => {
+            const item = this.items[itemName];
+            if (item.active && item.duration > 0) {
+                item.duration = Math.max(0, item.duration - deltaTime);
+                if (item.duration === 0) {
+                    item.active = false;
+                    // 重置道具效果
+                    if (itemName === 'rapidFire') {
+                        this.cannon.setRapidFire(false);
+                    }
+                }
+            }
+        });
+    }
+
+    // 新增：更新連擊計時器
+    updateComboTimer() {
+        if (this.comboTimer > 0) {
+            this.comboTimer -= 16; // 假設60FPS
+            if (this.comboTimer <= 0) {
+                this.stats.combo = 0;
+            }
+        }
+    }
+
+    // 新增：檢查BOSS生成
+    checkBossSpawn() {
+        const now = Date.now();
+        if (now >= this.bossSystem.nextSpawnTime && !this.bossSystem.activeBoss) {
+            this.spawnBoss();
+            this.bossSystem.nextSpawnTime = now + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL;
+        }
+    }
+
     handleCollisions() {
         const collisions = this.fishManager.checkBulletCollisions(this.bullets);
         
         collisions.forEach(({ bullet, fish }) => {
             const damage = bullet.getDamage();
-            const hitResult = this.fishManager.hitFish(fish, damage);
+            
+            // 檢查幸運一擊道具
+            let guaranteedKill = false;
+            if (this.items.luckyShot.active && this.items.luckyShot.uses > 0) {
+                guaranteedKill = true;
+                this.items.luckyShot.uses--;
+                if (this.items.luckyShot.uses <= 0) {
+                    this.items.luckyShot.active = false;
+                }
+            }
+            
+            const hitResult = this.fishManager.hitFish(fish, damage, guaranteedKill);
             
             if (hitResult.score > 0) {
                 this.addScore(hitResult.score);
@@ -1511,7 +1596,14 @@ class FishingGame {
     }
 
     addScore(points) {
-        this.score += points;
+        let finalPoints = points;
+        
+        // 檢查雙倍得分道具
+        if (this.items.doubleScore.active) {
+            finalPoints *= 2;
+        }
+        
+        this.score += finalPoints;
         this.score = Math.max(0, this.score);
     }
 
@@ -2018,6 +2110,7 @@ class FishingGame {
             case 'rapidFire':
                 this.items.rapidFire.active = true;
                 this.items.rapidFire.duration = config.duration;
+                this.cannon.setRapidFire(true);
                 this.showMessage('連發模式啟動！');
                 break;
         }

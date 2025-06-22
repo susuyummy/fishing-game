@@ -498,6 +498,12 @@ class Fish {
         this.freezeTimer = duration;
     }
     
+    // 解除冰凍效果
+    unfreeze() {
+        this.isFrozen = false;
+        this.freezeTimer = 0;
+    }
+    
     // 檢查是否被捕獲（基於捕獲率）
     checkCatch() {
         return Math.random() < this.catchRate;
