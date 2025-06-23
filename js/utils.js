@@ -402,9 +402,8 @@ const GAME_CONFIG = {
         BET_OPTIONS: [1, 2, 5, 10, 20, 50, 100, 200, 300, 500, 1000]
     },
     
-    // 魚類配置 - 擴展更多魚種
+    // 魚類配置 - 擴展更多魚種（移除小丑魚以增加遊戲難度）
     FISH_TYPES: [
-        { name: '小丑魚', size: 15, speed: 1.5, color: '#FF6B35', score: 2, health: 1, catchRate: 0.9 },
         { name: '金魚', size: 20, speed: 1.2, color: '#FFD700', score: 5, health: 2, catchRate: 0.8 },
         { name: '熱帶魚', size: 25, speed: 1.0, color: '#00CED1', score: 10, health: 3, catchRate: 0.7 },
         { name: '比目魚', size: 30, speed: 0.8, color: '#8B4513', score: 20, health: 5, catchRate: 0.6 },
