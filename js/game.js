@@ -48,7 +48,7 @@ class FishingGame {
         
         // 自動射擊系統
         this.autoShoot = false;
-        this.autoShootInterval = 800; // 自動射擊間隔(毫秒)
+        this.autoShootInterval = 150; // 自動射擊間隔(毫秒) - 大幅提高速度
         this.lastAutoShoot = 0;
         
         // 性能監控

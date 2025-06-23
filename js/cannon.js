@@ -48,7 +48,7 @@ class Cannon {
         
         // 發射相關
         this.lastFireTime = 0;
-        this.fireRate = 500; // 毫秒
+        this.fireRate = 100; // 毫秒 - 大幅提高射擊速度
         this.isReloading = false;
         this.reloadTime = 0;
         
@@ -627,13 +627,13 @@ class Cannon {
     
     // 新增：重置射速（用於連發模式結束）
     resetFireRate() {
-        this.fireRate = 500; // 恢復默認射速
+        this.fireRate = 100; // 恢復默認射速（已大幅提高）
     }
     
     // 新增：設置連發模式
     setRapidFire(enabled) {
         if (enabled) {
-            this.fireRate = 250; // 連發模式下射速翻倍
+            this.fireRate = 50; // 連發模式下射速更快
         } else {
             this.resetFireRate();
         }
