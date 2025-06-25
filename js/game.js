@@ -142,10 +142,25 @@ class FishingGame {
 
     init() {
         console.log('開始初始化遊戲組件...');
-        this.setupEventListeners();
-        this.initializeGame();
-        this.initializeUI();
-        this.showLoading();
+        
+        // 添加錯誤處理
+        try {
+            this.setupEventListeners();
+            console.log('事件監聽器設置完成');
+            
+            this.initializeGame();
+            console.log('遊戲系統初始化完成');
+            
+            this.initializeUI();
+            console.log('UI初始化完成');
+            
+            this.showLoading();
+            console.log('載入畫面顯示');
+            
+        } catch (error) {
+            console.error('遊戲初始化過程中發生錯誤:', error);
+            console.error('錯誤堆疊:', error.stack);
+        }
     }
 
     // 顯示配置加載錯誤
@@ -1933,16 +1948,38 @@ class FishingGame {
         }
         
         document.body.appendChild(skillPanel);
+        console.log('技能面板已添加到DOM，元素:', skillPanel);
+        console.log('技能面板位置和樣式:', {
+            position: getComputedStyle(skillPanel).position,
+            top: getComputedStyle(skillPanel).top,
+            left: getComputedStyle(skillPanel).left,
+            display: getComputedStyle(skillPanel).display,
+            visibility: getComputedStyle(skillPanel).visibility,
+            zIndex: getComputedStyle(skillPanel).zIndex
+        });
         
         // 綁定事件
         document.querySelectorAll('.skill-btn').forEach(btn => {
+            console.log('為技能按鈕綁定事件:', btn.id, btn.dataset.skill);
             btn.addEventListener('click', (e) => {
+                console.log('技能按鈕被點擊:', e.target.dataset.skill);
                 const skill = e.target.dataset.skill;
                 this.useSkill(skill);
             });
         });
         
-        console.log('技能按鈕創建完成');
+        console.log('技能按鈕創建完成，總共創建了', document.querySelectorAll('.skill-btn').length, '個按鈕');
+        
+        // 確保面板可見
+        setTimeout(() => {
+            const panel = document.getElementById('skillPanel');
+            if (panel) {
+                panel.style.display = 'block';
+                panel.style.visibility = 'visible';
+                panel.style.opacity = '1';
+                console.log('技能面板強制設置為可見');
+            }
+        }, 100);
     }
     
     createItemButtons() {
@@ -1994,16 +2031,38 @@ class FishingGame {
         }
         
         document.body.appendChild(itemPanel);
+        console.log('道具面板已添加到DOM，元素:', itemPanel);
+        console.log('道具面板位置和樣式:', {
+            position: getComputedStyle(itemPanel).position,
+            top: getComputedStyle(itemPanel).top,
+            left: getComputedStyle(itemPanel).left,
+            display: getComputedStyle(itemPanel).display,
+            visibility: getComputedStyle(itemPanel).visibility,
+            zIndex: getComputedStyle(itemPanel).zIndex
+        });
         
         // 綁定事件
         document.querySelectorAll('.item-btn').forEach(btn => {
+            console.log('為按鈕綁定事件:', btn.id, btn.dataset.item);
             btn.addEventListener('click', (e) => {
+                console.log('按鈕被點擊:', e.target.dataset.item);
                 const item = e.target.dataset.item;
                 this.useItem(item);
             });
         });
         
-        console.log('道具按鈕創建完成');
+        console.log('道具按鈕創建完成，總共創建了', document.querySelectorAll('.item-btn').length, '個按鈕');
+        
+        // 確保面板可見
+        setTimeout(() => {
+            const panel = document.getElementById('itemPanel');
+            if (panel) {
+                panel.style.display = 'block';
+                panel.style.visibility = 'visible';
+                panel.style.opacity = '1';
+                console.log('道具面板強制設置為可見');
+            }
+        }, 100);
     }
     
     createMissionPanel() {
@@ -2179,24 +2238,48 @@ class FishingGame {
     
     // 新增：使用道具
     useItem(itemName) {
-        console.log(`使用道具: ${itemName}`);
+        console.log('=== 使用道具函數被調用 ===');
+        console.log(`道具名稱: ${itemName}`);
+        console.log(`當前遊戲狀態: ${this.gameState}`);
+        console.log(`當前金幣: ${this.coins}`);
         
         // 檢查GAME_CONFIG是否存在
         if (!GAME_CONFIG || !GAME_CONFIG.ITEMS) {
             console.error('GAME_CONFIG.ITEMS 未定義');
+            alert('遊戲配置錯誤：道具系統未正確載入');
             return;
         }
         
-        const config = GAME_CONFIG.ITEMS[itemName.toUpperCase()];
+        // 將小駝峰命名轉換為大寫下劃線格式
+        let configKey;
+        switch (itemName) {
+            case 'doubleScore':
+                configKey = 'DOUBLE_SCORE';
+                break;
+            case 'luckyShot':
+                configKey = 'LUCKY_SHOT';
+                break;
+            case 'rapidFire':
+                configKey = 'RAPID_FIRE';
+                break;
+            default:
+                configKey = itemName.toUpperCase();
+        }
+        
+        const config = GAME_CONFIG.ITEMS[configKey];
+        console.log(`尋找配置: ${configKey}`);
+        console.log(`找到的配置:`, config);
         
         if (!config) {
-            console.error(`道具配置不存在: ${itemName}`);
+            console.error(`道具配置不存在: ${itemName} -> ${configKey}`);
+            alert(`道具配置錯誤：找不到 ${itemName} 的配置`);
             return;
         }
         
         // 檢查cost屬性
         if (typeof config.cost === 'undefined') {
             console.error(`道具 ${itemName} 缺少cost屬性`);
+            alert(`道具配置錯誤：${itemName} 缺少價格信息`);
             return;
         }
         
@@ -2205,7 +2288,9 @@ class FishingGame {
         
         // 檢查金幣
         if (this.coins < config.cost) {
+            console.log('金幣不足，顯示提示');
             this.showMessage('金幣不足！');
+            alert(`金幣不足！需要 ${config.cost} 金幣，目前只有 ${this.coins} 金幣`);
             return;
         }
         
@@ -2214,30 +2299,45 @@ class FishingGame {
         console.log(`扣除金幣後餘額: ${this.coins}`);
         
         // 執行道具效果
+        console.log(`開始執行道具效果: ${itemName}`);
         switch (itemName) {
             case 'doubleScore':
                 this.items.doubleScore.active = true;
                 this.items.doubleScore.duration = config.duration;
                 console.log('雙倍得分啟動！持續時間:', config.duration);
                 this.showMessage('雙倍得分啟動！');
+                alert('雙倍得分已啟動！15秒內得分翻倍');
                 break;
             case 'luckyShot':
                 this.items.luckyShot.active = true;
                 this.items.luckyShot.uses = config.uses;
                 console.log('幸運一擊啟動！次數:', config.uses);
                 this.showMessage('幸運一擊啟動！');
+                alert(`幸運一擊已啟動！剩餘 ${config.uses} 次高成功率射擊`);
                 break;
             case 'rapidFire':
                 this.items.rapidFire.active = true;
                 this.items.rapidFire.duration = config.duration;
-                this.cannon.setRapidFire(true);
-                console.log('連發模式啟動！持續時間:', config.duration);
-                console.log('炮台射速已調整為:', this.cannon.fireRate);
-                this.showMessage('連發模式啟動！');
+                if (this.cannon && typeof this.cannon.setRapidFire === 'function') {
+                    this.cannon.setRapidFire(true);
+                    console.log('連發模式啟動！持續時間:', config.duration);
+                    console.log('炮台射速已調整為:', this.cannon.fireRate);
+                    this.showMessage('連發模式啟動！');
+                    alert('連發模式已啟動！10秒內射擊速度翻倍');
+                } else {
+                    console.error('炮台對象不存在或缺少setRapidFire方法');
+                    alert('連發模式啟動失敗：炮台系統錯誤');
+                }
                 break;
+            default:
+                console.error(`未知的道具類型: ${itemName}`);
+                alert(`未知的道具類型: ${itemName}`);
+                return;
         }
         
+        console.log('道具效果執行完成，更新UI');
         this.updateUI();
+        console.log('=== 道具使用完成 ===');
     }
     
     // 新增：生成BOSS

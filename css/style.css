@@ -339,6 +339,50 @@ body {
         padding: 6px 10px;
         font-size: 11px;
     }
+    
+    .skill-panel, .item-panel {
+        position: fixed;
+        width: 140px;
+        margin: 0;
+        top: 10px;
+        font-size: 10px;
+    }
+    
+    .skill-panel {
+        left: 10px;
+    }
+    
+    .item-panel {
+        left: 160px;
+    }
+    
+    .mission-panel, .achievement-panel {
+        position: fixed;
+        width: 140px;
+        margin: 0;
+        bottom: 10px;
+        max-height: 120px;
+        font-size: 10px;
+    }
+    
+    .mission-panel {
+        left: 10px;
+    }
+    
+    .achievement-panel {
+        left: 160px;
+    }
+    
+    .boss-health-bar {
+        width: 90%;
+        top: 20px;
+    }
+    
+    .jackpot-display {
+        top: 50px;
+        font-size: 14px;
+        padding: 8px 15px;
+    }
 }
 
 /* 連鎖閃電效果 - 性能優化版 */
@@ -805,16 +849,17 @@ body {
 .skill-panel {
     position: fixed;
     top: 10px;
-    left: 10px;
-    background: rgba(0, 0, 0, 0.8);
+    right: 10px;
+    background: rgba(0, 0, 0, 0.9);
     border: 2px solid #FFD700;
     border-radius: 10px;
     padding: 10px;
     min-width: 150px;
     max-width: 150px;
-    z-index: 1000;
+    z-index: 2000;
     color: white;
     font-family: Arial, sans-serif;
+    pointer-events: auto;
 }
 
 .skill-panel h3 {
@@ -859,16 +904,17 @@ body {
 .item-panel {
     position: fixed;
     top: 10px;
-    left: 180px;
-    background: rgba(0, 0, 0, 0.8);
+    right: 180px;
+    background: rgba(0, 0, 0, 0.9);
     border: 2px solid #9370DB;
     border-radius: 10px;
     padding: 10px;
     min-width: 150px;
     max-width: 150px;
-    z-index: 1000;
+    z-index: 2000;
     color: white;
     font-family: Arial, sans-serif;
+    pointer-events: auto;
 }
 
 .item-panel h3 {
@@ -1175,36 +1221,5 @@ body {
     100% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
-    }
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-    .skill-panel, .item-panel {
-        position: relative;
-        width: 100%;
-        margin: 5px 0;
-        top: auto;
-        right: auto;
-    }
-    
-    .mission-panel, .achievement-panel {
-        position: relative;
-        width: 100%;
-        margin: 5px 0;
-        bottom: auto;
-        left: auto;
-        max-height: 150px;
-    }
-    
-    .boss-health-bar {
-        width: 90%;
-        top: 20px;
-    }
-    
-    .jackpot-display {
-        top: 50px;
-        font-size: 14px;
-        padding: 8px 15px;
     }
 } 
