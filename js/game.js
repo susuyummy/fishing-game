@@ -1792,21 +1792,27 @@ class FishingGame {
     }
 
     getPredictedFishPoint(fish, frames = 10) {
-        const padding = 8;
+        const padding = this.getLaserTargetPadding(fish);
         return {
             x: Utils.clamp(fish.x + fish.vx * frames, padding, this.canvas.width - padding),
             y: Utils.clamp(fish.y + fish.vy * frames, padding, this.canvas.height - padding)
         };
     }
 
+    getLaserTargetPadding(fish) {
+        const radius = fish?.radius || 0;
+        const spriteScale = fish?.type >= 8 ? 1.65 : fish?.type >= 3 ? 1.5 : 1.42;
+        return Math.ceil(radius * spriteScale + 10);
+    }
+
     isFishInsideLaserView(fish) {
         if (!fish || fish.isDead) return false;
-        const radius = fish.radius || 0;
+        const padding = this.getLaserTargetPadding(fish);
         return (
-            fish.x - radius >= 0 &&
-            fish.x + radius <= this.canvas.width &&
-            fish.y - radius >= 0 &&
-            fish.y + radius <= this.canvas.height
+            fish.x - padding >= 0 &&
+            fish.x + padding <= this.canvas.width &&
+            fish.y - padding >= 0 &&
+            fish.y + padding <= this.canvas.height
         );
     }
 
