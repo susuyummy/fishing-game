@@ -5,8 +5,11 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(to bottom, #87CEEB 0%, #4682B4 50%, #191970 100%);
+    font-family: "Trebuchet MS", "Arial", sans-serif;
+    background:
+        radial-gradient(circle at 50% 8%, rgba(255, 216, 73, 0.22), transparent 24%),
+        radial-gradient(circle at 16% 82%, rgba(209, 0, 64, 0.38), transparent 30%),
+        linear-gradient(180deg, #1A0611 0%, #360011 42%, #05020A 100%);
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
@@ -25,11 +28,38 @@ body {
 
 #gameArea {
     position: relative;
-    border: 3px solid #FFD700;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    border: 5px solid rgba(255, 210, 64, 0.98);
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 3px rgba(120, 0, 25, 0.9),
+        0 18px 50px rgba(0, 0, 0, 0.45),
+        0 0 42px rgba(255, 201, 47, 0.52),
+        inset 0 0 30px rgba(255, 0, 64, 0.18);
     background: radial-gradient(circle at center, #1E90FF 0%, #4169E1 100%);
     overflow: hidden;
+}
+
+#gameArea::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border: 2px solid rgba(255, 245, 173, 0.55);
+    border-radius: 12px;
+    box-shadow: inset 0 0 18px rgba(255, 213, 56, 0.35);
+    pointer-events: none;
+    z-index: 95;
+}
+
+#gameArea::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 16%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0, rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 4px);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 96;
 }
 
 #gameCanvas {
@@ -52,10 +82,12 @@ body {
     position: absolute;
     top: 10px;
     left: 10px;
-    background: rgba(0, 0, 0, 0.7);
+    background: linear-gradient(160deg, rgba(24, 0, 10, 0.94), rgba(75, 0, 20, 0.82));
     color: #FFD700;
     padding: 15px;
-    border-radius: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 223, 92, 0.82);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.36), 0 0 18px rgba(255, 0, 72, 0.24), inset 0 0 18px rgba(255, 204, 47, 0.13);
     font-size: 18px;
     font-weight: bold;
     min-width: 200px;
@@ -72,31 +104,31 @@ body {
 
 #controls {
     position: absolute;
-    top: 10px;
-    right: 450px;
+    bottom: 12px;
+    right: 10px;
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 8px;
     pointer-events: auto;
 }
 
 #controls button {
-    padding: 10px 20px;
-    background: linear-gradient(45deg, #FFD700, #FFA500);
-    border: none;
-    border-radius: 5px;
+    padding: 9px 14px;
+    background: linear-gradient(180deg, #FFF3A5 0%, #FFD13B 42%, #C77700 100%);
+    border: 1px solid #5B1200;
+    border-radius: 8px;
     color: #000;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 3px 0 #6B1B00, 0 0 14px rgba(255, 203, 61, 0.45);
 }
 
 #controls button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    background: linear-gradient(45deg, #FFA500, #FFD700);
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFD946 48%, #D53C00 100%);
 }
 
 #controls button:active {
@@ -371,11 +403,6 @@ body {
     
     .achievement-panel {
         left: 160px;
-    }
-    
-    .boss-health-bar {
-        width: 90%;
-        top: 20px;
     }
     
     .jackpot-display {
@@ -693,18 +720,21 @@ body {
 
 /* 賭注面板樣式 - 移到遊戲畫布外面 */
 #betPanel {
-    position: fixed;
+    position: absolute;
     top: 10px;
     right: 10px;
-    background: rgba(0, 0, 0, 0.95);
+    background:
+        linear-gradient(160deg, rgba(32, 0, 10, 0.96), rgba(93, 0, 25, 0.92)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 8px);
     color: white;
     padding: 15px;
-    border-radius: 15px;
+    border-radius: 14px;
     font-family: Arial, sans-serif;
     pointer-events: auto;
-    border: 2px solid #FFD700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-    min-width: 220px;
+    border: 2px solid rgba(255, 219, 88, 0.96);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.44), 0 0 28px rgba(255, 28, 83, 0.38), inset 0 0 22px rgba(255, 215, 0, 0.14);
+    width: 280px;
+    min-width: 280px;
     z-index: 9999;
     backdrop-filter: blur(5px);
 }
@@ -714,7 +744,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    border-bottom: 1px solid #FFD700;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.74);
     padding-bottom: 10px;
 }
 
@@ -722,6 +752,7 @@ body {
     margin: 0;
     color: #FFD700;
     font-size: 16px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.72);
 }
 
 #attackStatus {
@@ -729,8 +760,9 @@ body {
     font-weight: bold;
     padding: 4px 8px;
     border-radius: 5px;
-    background: rgba(0, 255, 0, 0.2);
-    color: #00FF00;
+    background: linear-gradient(180deg, #24FF7A, #008E37);
+    color: #031407;
+    border: 1px solid rgba(218, 255, 225, 0.55);
 }
 
 #betControls {
@@ -746,13 +778,13 @@ body {
     height: 40px;
     border: none;
     border-radius: 50%;
-    background: linear-gradient(45deg, #FFD700, #FFA500);
-    color: #000;
+    background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #FFE66D 30%, #F0A400 66%, #8A2500 100%);
+    color: #250600;
     font-size: 20px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.25), 0 4px 0 #5B1000, 0 0 15px rgba(255, 215, 0, 0.45);
 }
 
 .bet-btn:hover {
@@ -776,12 +808,14 @@ body {
 #betAmount, #damageInfo {
     margin: 5px 0;
     font-size: 14px;
+    color: #FFE8B0;
 }
 
-#betValue, #damageValue {
+#currentBet, #damageValue {
     color: #FFD700;
     font-weight: bold;
     font-size: 18px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
 }
 
 #betPresets {
@@ -792,10 +826,11 @@ body {
 }
 
 .preset-btn {
-    padding: 8px 12px;
-    border: 1px solid #FFD700;
-    border-radius: 8px;
-    background: rgba(255, 215, 0, 0.1);
+    min-width: 38px;
+    padding: 7px 8px;
+    border: 2px solid #FFD700;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.22), rgba(255, 215, 0, 0.18) 38%, rgba(73, 0, 18, 0.72) 100%);
     color: #FFD700;
     font-size: 12px;
     font-weight: bold;
@@ -809,9 +844,9 @@ body {
 }
 
 .preset-btn.active {
-    background: #FFD700;
-    color: #000;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    background: radial-gradient(circle at 35% 28%, #FFFFFF, #FFD700 40%, #C92700 100%);
+    color: #1C0500;
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.8), inset 0 0 0 2px rgba(91, 0, 0, 0.4);
 }
 
 /* 金幣相關動畫 */
@@ -848,11 +883,11 @@ body {
 /* 新增：特殊技能面板 */
 .skill-panel {
     position: fixed;
-    top: 10px;
+    top: 215px;
     right: 10px;
-    background: rgba(0, 0, 0, 0.9);
-    border: 2px solid #FFD700;
-    border-radius: 10px;
+    background: linear-gradient(160deg, rgba(39, 0, 11, 0.95), rgba(12, 5, 16, 0.92));
+    border: 1px solid rgba(255, 215, 0, 0.88);
+    border-radius: 12px;
     padding: 10px;
     min-width: 150px;
     max-width: 150px;
@@ -874,8 +909,8 @@ body {
     width: 100%;
     margin: 3px 0;
     padding: 6px 8px;
-    background: linear-gradient(45deg, #4CAF50, #45a049);
-    border: none;
+    background: linear-gradient(180deg, #4DFF8A, #109436);
+    border: 1px solid rgba(234, 255, 222, 0.45);
     border-radius: 5px;
     color: white;
     font-size: 10px;
@@ -903,11 +938,11 @@ body {
 /* 新增：道具面板 */
 .item-panel {
     position: fixed;
-    top: 10px;
-    right: 180px;
-    background: rgba(0, 0, 0, 0.9);
-    border: 2px solid #9370DB;
-    border-radius: 10px;
+    top: 365px;
+    right: 10px;
+    background: linear-gradient(160deg, rgba(34, 0, 44, 0.95), rgba(18, 0, 18, 0.92));
+    border: 1px solid rgba(255, 96, 247, 0.88);
+    border-radius: 12px;
     padding: 10px;
     min-width: 150px;
     max-width: 150px;
@@ -929,8 +964,8 @@ body {
     width: 100%;
     margin: 3px 0;
     padding: 6px 8px;
-    background: linear-gradient(45deg, #9370DB, #8A2BE2);
-    border: none;
+    background: linear-gradient(180deg, #C877FF, #6A20C8);
+    border: 1px solid rgba(244, 220, 255, 0.42);
     border-radius: 5px;
     color: white;
     font-size: 10px;
@@ -961,8 +996,8 @@ body {
     position: fixed;
     bottom: 10px;
     left: 10px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid #00CED1;
+    background: linear-gradient(160deg, rgba(12, 0, 18, 0.9), rgba(0, 20, 42, 0.86));
+    border: 2px solid #00F0FF;
     border-radius: 10px;
     padding: 8px;
     min-width: 150px;
@@ -1111,47 +1146,14 @@ body {
     100% { transform: scale(1); }
 }
 
-/* 新增：BOSS血量條 */
-.boss-health-bar {
-    position: fixed;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    height: 20px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid #FF0000;
-    border-radius: 10px;
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.boss-health-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #FF0000, #FF6B6B);
-    transition: width 0.3s ease;
-    border-radius: 8px;
-}
-
-.boss-name {
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #FFD700;
-    font-weight: bold;
-    font-size: 14px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
 /* 新增：彩金顯示 */
 .jackpot-display {
     position: fixed;
     top: 80px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(45deg, #FFD700, #FFA500);
-    border: 3px solid #FF6B35;
+    background: linear-gradient(180deg, #FFF7B2 0%, #FFD700 38%, #FF3B00 100%);
+    border: 3px solid #8F0000;
     border-radius: 15px;
     padding: 10px 20px;
     color: #8B0000;
@@ -1170,9 +1172,9 @@ body {
 /* 新增：連擊顯示 */
 .combo-display {
     position: fixed;
-    top: 120px;
-    right: 20px;
-    background: rgba(255, 0, 0, 0.9);
+    top: 535px;
+    right: 10px;
+    background: linear-gradient(180deg, #FF263F, #790010);
     border: 2px solid #FFD700;
     border-radius: 10px;
     padding: 8px 15px;

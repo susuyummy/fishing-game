@@ -84,7 +84,7 @@ class Utils {
     // 創建粒子效果 - 性能優化版
     static createParticles(x, y, count, color) {
         // 限制粒子數量，減少性能消耗
-        const maxParticles = Math.min(count, 3);
+        const maxParticles = Math.min(count, 8);
         const particles = [];
         for (let i = 0; i < maxParticles; i++) {
             particles.push({
@@ -386,12 +386,118 @@ class Utils {
     }
 }
 
+// 生成素材載入器：背景圖直接使用，魚圖在瀏覽器端去除綠幕。
+class GameAssets {
+    static background = null;
+    static fishSheet = null;
+    static fishSheetReady = false;
+    static backgroundReady = false;
+    static started = false;
+
+    static load() {
+        if (this.started) return;
+        this.started = true;
+
+        this.background = new Image();
+        this.background.onload = () => {
+            this.backgroundReady = true;
+        };
+        this.background.src = 'assets/images/ocean-background.png';
+
+        const sourceFishSheet = new Image();
+        sourceFishSheet.onload = () => {
+            this.fishSheet = this.removeGreenScreen(sourceFishSheet);
+            this.fishSheetReady = true;
+        };
+        sourceFishSheet.src = 'assets/images/fish-sprites-source.png';
+    }
+
+    static removeGreenScreen(image) {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const greenDominance = g - Math.max(r, b);
+            if (g > 120 && greenDominance > 32) {
+                const alpha = Utils.clamp(255 - (greenDominance - 20) * 7, 0, 255);
+                data[i + 3] = Math.min(data[i + 3], alpha);
+                if (alpha < 90) {
+                    data[i] = 0;
+                    data[i + 1] = 0;
+                    data[i + 2] = 0;
+                }
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        return canvas;
+    }
+
+    static drawBackground(ctx, canvas) {
+        if (!this.backgroundReady) return false;
+
+        const imageRatio = this.background.width / this.background.height;
+        const canvasRatio = canvas.width / canvas.height;
+        let sx = 0;
+        let sy = 0;
+        let sw = this.background.width;
+        let sh = this.background.height;
+
+        if (imageRatio > canvasRatio) {
+            sw = this.background.height * canvasRatio;
+            sx = (this.background.width - sw) / 2;
+        } else {
+            sh = this.background.width / canvasRatio;
+            sy = (this.background.height - sh) / 2;
+        }
+
+        ctx.drawImage(this.background, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+        return true;
+    }
+
+    static getFishSpriteIndex(fishType) {
+        const spriteMap = [0, 1, 2, 6, 7, 3, 4, 5, 7, 7];
+        return spriteMap[fishType] ?? 0;
+    }
+
+    static drawFish(ctx, fish) {
+        if (!this.fishSheetReady || !this.fishSheet) return false;
+
+        const index = this.getFishSpriteIndex(fish.type);
+        const cols = 4;
+        const rows = 2;
+        const cellW = this.fishSheet.width / cols;
+        const cellH = this.fishSheet.height / rows;
+        const sx = (index % cols) * cellW;
+        const sy = Math.floor(index / cols) * cellH;
+
+        const drawW = fish.radius * (fish.type >= 8 ? 3.15 : fish.type >= 3 ? 2.9 : 2.75);
+        const drawH = drawW * (cellH / cellW);
+
+        ctx.save();
+        ctx.shadowColor = fish.special ? fish.color : 'rgba(255, 255, 255, 0.55)';
+        ctx.shadowBlur = fish.special ? 20 : 9;
+        ctx.drawImage(this.fishSheet, sx, sy, cellW, cellH, -drawW * 0.5, -drawH * 0.5, drawW, drawH);
+        ctx.restore();
+
+        return true;
+    }
+}
+
 // 遊戲配置
 const GAME_CONFIG = {
     // 基礎設置
     INITIAL_SCORE: 10000,
-    MAX_FISH_COUNT: 50,
-    MIN_FISH_COUNT: 20,
+    MAX_FISH_COUNT: 30,
+    MIN_FISH_COUNT: 10,
     
     // 賭注系統
     BET_SYSTEM: {
@@ -401,20 +507,27 @@ const GAME_CONFIG = {
         MAX_BET: 1000,
         BET_OPTIONS: [1, 2, 5, 10, 20, 50, 100, 200, 300, 500, 1000]
     },
+
+    // 雷射改成必中後，需要比傳統子彈低一點，避免魚被瞬間清場
+    LASER_BALANCE: {
+        MANUAL_DAMAGE_SCALE: 0.35,
+        AUTO_DAMAGE_SCALE: 0.22,
+        MIN_DAMAGE: 1
+    },
     
     // 魚類配置 - 擴展更多魚種（移除小丑魚以增加遊戲難度）
     FISH_TYPES: [
-        { name: '金魚', size: 20, speed: 1.2, color: '#FFD700', score: 5, health: 2, catchRate: 0.8 },
-        { name: '熱帶魚', size: 25, speed: 1.0, color: '#00CED1', score: 10, health: 3, catchRate: 0.7 },
-        { name: '比目魚', size: 30, speed: 0.8, color: '#8B4513', score: 20, health: 5, catchRate: 0.6 },
-        { name: '鯊魚', size: 50, speed: 0.6, color: '#708090', score: 50, health: 10, catchRate: 0.4 },
-        { name: '鯨魚', size: 80, speed: 0.4, color: '#2F4F4F', score: 100, health: 20, catchRate: 0.3 },
+        { name: '金魚', size: 20, speed: 1.2, color: '#FFD700', score: 5, health: 4, catchRate: 0.8 },
+        { name: '熱帶魚', size: 25, speed: 1.0, color: '#00CED1', score: 10, health: 7, catchRate: 0.7 },
+        { name: '比目魚', size: 30, speed: 0.8, color: '#8B4513', score: 20, health: 14, catchRate: 0.6 },
+        { name: '鯊魚', size: 50, speed: 0.6, color: '#708090', score: 50, health: 32, catchRate: 0.4 },
+        { name: '鯨魚', size: 80, speed: 0.4, color: '#2F4F4F', score: 100, health: 70, catchRate: 0.3 },
         // 新增特殊魚種
-        { name: '爆炸魚', size: 35, speed: 1.0, color: '#FF4500', score: 30, health: 8, catchRate: 0.5, special: 'explosion' },
-        { name: '冰凍魚', size: 40, speed: 0.7, color: '#87CEEB', score: 40, health: 12, catchRate: 0.4, special: 'freeze' },
-        { name: '倍數魚', size: 45, speed: 0.5, color: '#9370DB', score: 60, health: 15, catchRate: 0.3, special: 'multiplier' },
-        { name: '龍王', size: 100, speed: 0.3, color: '#DC143C', score: 200, health: 50, catchRate: 0.2, special: 'boss' },
-        { name: '黃金龍', size: 120, speed: 0.2, color: '#FFD700', score: 500, health: 100, catchRate: 0.1, special: 'jackpot' }
+        { name: '爆炸魚', size: 35, speed: 1.0, color: '#FF4500', score: 30, health: 22, catchRate: 0.5, special: 'explosion' },
+        { name: '冰凍魚', size: 40, speed: 0.7, color: '#87CEEB', score: 40, health: 30, catchRate: 0.4, special: 'freeze' },
+        { name: '倍數魚', size: 45, speed: 0.5, color: '#9370DB', score: 60, health: 45, catchRate: 0.3, special: 'multiplier' },
+        { name: '龍王', size: 100, speed: 0.3, color: '#DC143C', score: 200, health: 130, catchRate: 0.2, special: 'boss' },
+        { name: '黃金龍', size: 120, speed: 0.2, color: '#FFD700', score: 500, health: 280, catchRate: 0.1, special: 'jackpot' }
     ],
     
     // 炮台等級配置
@@ -570,9 +683,17 @@ const GAME_CONFIG = {
     // 閃電系統配置
     AUTO_LIGHTNING_MODE: false,
     CONTINUOUS_LIGHTNING: true,
+    LOCK_TARGET_UNTIL_DEAD: true,
+    MAX_CONTINUOUS_TARGETS: 2,
+    LIGHTNING_FIRE_RATE: 8,
     LIGHTNING_DURATION: 2000,
     LIGHTNING_TARGET_COUNT: 3,
-    LIGHTNING_CHAIN_RANGE: 100
+    LIGHTNING_CHAIN_RANGE: 100,
+
+    // 連鎖反應配置
+    MAX_CHAIN_COUNT: 4,
+    CHAIN_REACTION_RANGE: 120,
+    CHAIN_DAMAGE_DECAY: 0.55
 };
 
 // 調試信息（已移除） 

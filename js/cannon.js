@@ -208,6 +208,34 @@ class Cannon {
         }
     }
 
+    fireLaser(targetX, targetY) {
+        if (!this.canFire()) {
+            return null;
+        }
+
+        this.setTarget(targetX, targetY);
+        this.angle = Utils.getAngle(this.x, this.y, targetX, targetY);
+        this.aimAngle = this.angle;
+        this.lastFireTime = Date.now();
+        this.isReloading = true;
+        this.reloadTime = 0;
+        this.fireAnimation = 1;
+        this.recoilAnimation = 1;
+        this.muzzleFlash = 1;
+        this.barrelHeat = Math.min(this.barrelHeat + 0.32, 1);
+
+        const barrelLength = 72;
+        const muzzle = {
+            x: this.x + Math.cos(this.angle) * barrelLength,
+            y: this.y + Math.sin(this.angle) * barrelLength
+        };
+
+        Utils.createRipple(muzzle.x, muzzle.y);
+        Utils.playSound('laserFire');
+        Utils.vibrate(70);
+        return muzzle;
+    }
+
     // 新增：發射閃電攻擊
     fireLightning() {
         // 創建閃電炮口特效
@@ -409,45 +437,59 @@ class Cannon {
     }
 
     drawBase(ctx) {
-        // 基座陰影
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        const time = Date.now() * 0.004;
+
+        ctx.save();
+        ctx.shadowColor = '#00E5FF';
+        ctx.shadowBlur = 18 + this.glowIntensity * 16;
+
+        const outer = ctx.createRadialGradient(0, 0, 6, 0, 0, 48);
+        outer.addColorStop(0, '#FFFFFF');
+        outer.addColorStop(0.18, '#7DF9FF');
+        outer.addColorStop(0.48, this.color);
+        outer.addColorStop(1, '#09142F');
+        ctx.fillStyle = outer;
         ctx.beginPath();
-        ctx.arc(2, 2, 35, 0, Math.PI * 2);
+        ctx.arc(0, 0, 42, 0, Math.PI * 2);
         ctx.fill();
-        
-        // 基座主體
-        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 35);
-        gradient.addColorStop(0, this.color);
-        gradient.addColorStop(0.7, this.color);
-        gradient.addColorStop(1, '#444');
-        
-        ctx.fillStyle = gradient;
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#FFE87A';
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(0, 0, 35, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 基座邊框
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, 0, 35, 0, Math.PI * 2);
+        ctx.arc(0, 0, 42, 0, Math.PI * 2);
         ctx.stroke();
-        
-        // 等級指示器
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 16px Arial';
+
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.85)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([9, 7]);
+        ctx.lineDashOffset = -time * 18;
+        ctx.beginPath();
+        ctx.arc(0, 0, 56, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        for (let i = 0; i < 6; i++) {
+            const angle = time + i * Math.PI / 3;
+            const x = Math.cos(angle) * 30;
+            const y = Math.sin(angle) * 30;
+            ctx.fillStyle = i % 2 === 0 ? '#FFFFFF' : '#00FFFF';
+            ctx.beginPath();
+            ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.fillStyle = '#07111F';
+        ctx.beginPath();
+        ctx.arc(0, 0, 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFD84D';
+        ctx.font = 'bold 17px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText((this.level + 1).toString(), 0, 0);
-        
-        // 發光效果
-        if (this.glowIntensity > 0) {
-            ctx.shadowColor = this.color;
-            ctx.shadowBlur = 20 * this.glowIntensity;
-            ctx.beginPath();
-            ctx.arc(0, 0, 35, 0, Math.PI * 2);
-            ctx.stroke();
-        }
+        ctx.fillText((this.level + 1).toString(), 0, 1);
+        ctx.restore();
     }
 
     drawBarrel(ctx) {
@@ -459,62 +501,84 @@ class Cannon {
             ctx.translate(-this.recoilAnimation * 10, 0);
         }
         
-        // 炮管陰影
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(0, -8, 62, 16);
-        
-        // 炮管主體
-        const barrelGradient = ctx.createLinearGradient(0, -8, 0, 8);
-        barrelGradient.addColorStop(0, '#666');
+        ctx.shadowColor = '#00E5FF';
+        ctx.shadowBlur = 12 + this.barrelHeat * 18;
+
+        const barrelGradient = ctx.createLinearGradient(0, -16, 0, 16);
+        barrelGradient.addColorStop(0, '#F8FBFF');
+        barrelGradient.addColorStop(0.18, '#8DDCFF');
         barrelGradient.addColorStop(0.5, this.color);
-        barrelGradient.addColorStop(1, '#444');
-        
+        barrelGradient.addColorStop(0.82, '#1B2A48');
+        barrelGradient.addColorStop(1, '#060914');
+
         ctx.fillStyle = barrelGradient;
-        ctx.fillRect(0, -8, 60, 16);
+        ctx.beginPath();
+        ctx.moveTo(0, -15);
+        ctx.lineTo(60, -12);
+        ctx.quadraticCurveTo(78, -7, 78, 0);
+        ctx.quadraticCurveTo(78, 7, 60, 12);
+        ctx.lineTo(0, 15);
+        ctx.quadraticCurveTo(-8, 0, 0, -15);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#FFE87A';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         
         // 炮管熱度效果
         if (this.barrelHeat > 0) {
-            const heatGradient = ctx.createLinearGradient(0, -8, 0, 8);
-            heatGradient.addColorStop(0, `rgba(255, 0, 0, ${this.barrelHeat * 0.3})`);
-            heatGradient.addColorStop(0.5, `rgba(255, 100, 0, ${this.barrelHeat * 0.5})`);
-            heatGradient.addColorStop(1, `rgba(255, 0, 0, ${this.barrelHeat * 0.3})`);
+            const heatGradient = ctx.createLinearGradient(10, -14, 75, 14);
+            heatGradient.addColorStop(0, `rgba(255, 255, 255, ${this.barrelHeat * 0.1})`);
+            heatGradient.addColorStop(0.5, `rgba(0, 255, 255, ${this.barrelHeat * 0.38})`);
+            heatGradient.addColorStop(1, `rgba(255, 0, 180, ${this.barrelHeat * 0.18})`);
             
             ctx.fillStyle = heatGradient;
-            ctx.fillRect(0, -8, 60, 16);
-        }
-        
-        // 炮管裝飾
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 1;
-        for (let i = 10; i < 60; i += 10) {
             ctx.beginPath();
-            ctx.moveTo(i, -8);
-            ctx.lineTo(i, 8);
+            ctx.moveTo(8, -10);
+            ctx.lineTo(68, -7);
+            ctx.quadraticCurveTo(76, 0, 68, 7);
+            ctx.lineTo(8, 10);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 1;
+        for (let i = 14; i < 62; i += 12) {
+            ctx.beginPath();
+            ctx.moveTo(i, -11);
+            ctx.lineTo(i + 5, 11);
             ctx.stroke();
         }
         
         // 炮口
-        ctx.fillStyle = '#222';
+        const muzzleGradient = ctx.createRadialGradient(72, 0, 0, 72, 0, 15);
+        muzzleGradient.addColorStop(0, '#FFFFFF');
+        muzzleGradient.addColorStop(0.25, '#00FFFF');
+        muzzleGradient.addColorStop(0.62, '#183B71');
+        muzzleGradient.addColorStop(1, '#050912');
+        ctx.fillStyle = muzzleGradient;
         ctx.beginPath();
-        ctx.arc(60, 0, 8, 0, Math.PI * 2);
+        ctx.arc(72, 0, 13, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#FFE87A';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(60, 0, 8, 0, Math.PI * 2);
+        ctx.arc(72, 0, 13, 0, Math.PI * 2);
         ctx.stroke();
         
         // 槍口閃光
         if (this.muzzleFlash > 0) {
-            const flashGradient = ctx.createRadialGradient(60, 0, 0, 60, 0, 30);
-            flashGradient.addColorStop(0, `rgba(255, 255, 100, ${this.muzzleFlash})`);
-            flashGradient.addColorStop(0.5, `rgba(255, 200, 0, ${this.muzzleFlash * 0.5})`);
+            const flashGradient = ctx.createRadialGradient(76, 0, 0, 76, 0, 46);
+            flashGradient.addColorStop(0, `rgba(255, 255, 255, ${this.muzzleFlash})`);
+            flashGradient.addColorStop(0.35, `rgba(0, 255, 255, ${this.muzzleFlash * 0.75})`);
             flashGradient.addColorStop(1, 'transparent');
             
             ctx.fillStyle = flashGradient;
             ctx.beginPath();
-            ctx.arc(60, 0, 30, 0, Math.PI * 2);
+            ctx.arc(76, 0, 46, 0, Math.PI * 2);
             ctx.fill();
         }
         
@@ -523,9 +587,9 @@ class Cannon {
 
     drawAimLine(ctx) {
         ctx.save();
-        ctx.strokeStyle = `rgba(255, 0, 0, 0.7)`;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = `rgba(0, 255, 255, 0.38)`;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([8, 12]);
         
         const endX = Math.cos(this.angle) * this.aimLineLength;
         const endY = Math.sin(this.angle) * this.aimLineLength;
@@ -536,9 +600,9 @@ class Cannon {
         ctx.stroke();
         
         // 瞄準點
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         ctx.beginPath();
-        ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+        ctx.arc(endX, endY, 4, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.restore();

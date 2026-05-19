@@ -25,6 +25,7 @@ class Bullet {
         
         // 特效
         this.trail = [];
+        this.energyTrail = [];
         this.glowIntensity = 1;
         this.particles = [];
         
@@ -104,26 +105,34 @@ class Bullet {
     updateTrail() {
         // 添加軌跡點
         this.trail.unshift({ x: this.x, y: this.y });
+        this.energyTrail.unshift({
+            x: this.x,
+            y: this.y,
+            radius: this.radius * Utils.random(0.5, 1.2)
+        });
         
         // 限制軌跡長度
-        const maxTrailLength = 10 + this.cannonLevel * 2;
+        const maxTrailLength = 16 + this.cannonLevel * 4;
         if (this.trail.length > maxTrailLength) {
             this.trail.pop();
+        }
+        if (this.energyTrail.length > maxTrailLength) {
+            this.energyTrail.pop();
         }
     }
 
     updateParticles() {
         // 添加新粒子
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.55) {
             this.particles.push({
                 x: this.x + Utils.random(-5, 5),
                 y: this.y + Utils.random(-5, 5),
-                vx: Utils.random(-1, 1),
-                vy: Utils.random(-1, 1),
+                vx: Utils.random(-1.8, 1.8),
+                vy: Utils.random(-1.8, 1.8),
                 life: 1,
-                decay: 0.05,
-                size: Utils.random(1, 3),
-                color: this.color
+                decay: Utils.random(0.04, 0.08),
+                size: Utils.random(1.5, 4.5),
+                color: Math.random() < 0.45 ? '#FFFFFF' : this.color
             });
         }
         
@@ -169,7 +178,7 @@ class Bullet {
             this.explosionRadius = 0;
             
             // 創建爆炸粒子
-            const explosionParticles = Utils.createParticles(this.x, this.y, 15, this.color);
+            const explosionParticles = Utils.createParticles(this.x, this.y, 22, this.color);
             this.particles.push(...explosionParticles);
             
             // 特效
@@ -221,6 +230,25 @@ class Bullet {
         ctx.beginPath();
         ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
         ctx.fill();
+
+        // 能量外環和星芒
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius + 4 + Math.sin(Date.now() * 0.02) * 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 4; i++) {
+            const angle = Date.now() * 0.006 + i * Math.PI / 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(angle) * (this.radius + 8), Math.sin(angle) * (this.radius + 8));
+            ctx.lineTo(Math.cos(angle) * (this.radius + 18), Math.sin(angle) * (this.radius + 18));
+            ctx.stroke();
+        }
+        ctx.globalCompositeOperation = 'source-over';
         
         // 子彈邊框
         ctx.strokeStyle = this.color;
@@ -243,10 +271,24 @@ class Bullet {
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'lighter';
+
+        this.energyTrail.forEach((point, index) => {
+            const alpha = (this.energyTrail.length - index) / this.energyTrail.length;
+            const auraRadius = point.radius * (3 + this.cannonLevel);
+            const aura = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, auraRadius);
+            aura.addColorStop(0, `rgba(255, 255, 255, ${0.36 * alpha})`);
+            aura.addColorStop(0.35, `${this.color}${Math.floor(alpha * 130).toString(16).padStart(2, '0')}`);
+            aura.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = aura;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, auraRadius, 0, Math.PI * 2);
+            ctx.fill();
+        });
         
         for (let i = 0; i < this.trail.length - 1; i++) {
             const alpha = (this.trail.length - i) / this.trail.length;
-            const width = (this.radius * alpha) * 0.5;
+            const width = Math.max(1, (this.radius * alpha) * 0.9);
             
             ctx.strokeStyle = this.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
             ctx.lineWidth = width;
@@ -256,6 +298,15 @@ class Bullet {
             ctx.lineTo(this.trail[i + 1].x, this.trail[i + 1].y);
             ctx.stroke();
         }
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+        ctx.lineWidth = Math.max(1, this.radius * 0.22);
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0].x, this.trail[0].y);
+        for (let i = 1; i < Math.min(this.trail.length, 8); i++) {
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+        }
+        ctx.stroke();
         
         ctx.restore();
     }
@@ -282,6 +333,14 @@ class Bullet {
         ctx.beginPath();
         ctx.arc(0, 0, this.explosionRadius * 0.8, 0, Math.PI * 2);
         ctx.stroke();
+
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.explosionRadius * 1.15, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
         
         // 火花效果
         const sparkCount = 8;

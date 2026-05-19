@@ -5,13 +5,13 @@ class FishManager {
         this.fishes = [];
         this.fishGroups = [];
         this.spawnTimer = 0;
-        this.spawnInterval = 40; // 大幅減少生成間隔
+        this.spawnInterval = 70;
         this.maxFish = GAME_CONFIG.MAX_FISH_COUNT;
         this.minFish = GAME_CONFIG.MIN_FISH_COUNT;
         
         // 魚群管理
         this.groupSpawnTimer = 0;
-        this.groupSpawnInterval = 200; // 大幅減少魚群生成間隔
+        this.groupSpawnInterval = 420;
         
         // 特殊魚類
         this.bossSpawnTimer = 0;
@@ -38,8 +38,8 @@ class FishManager {
             this.spawnRandomFish();
         }
         
-        // 立即生成多個魚群
-        for (let i = 0; i < 3; i++) {
+        // 立即生成少量魚群，保持畫面有層次但不雜亂
+        for (let i = 0; i < 2; i++) {
             setTimeout(() => {
                 this.spawnFishGroup();
             }, i * 500);
@@ -134,7 +134,7 @@ class FishManager {
     spawnFishGroup() {
         const groupType = Utils.randomInt(0, 2); // 0: 圓形, 1: 直線, 2: V字形
         const fishType = this.getRandomFishType();
-        const fishCount = Utils.randomInt(12, 20); // 大幅增加魚群數量
+        const fishCount = Utils.randomInt(6, 10);
         const position = this.getRandomSpawnPosition();
         
         const group = new FishGroup(position.x, position.y, groupType, fishType, fishCount);
@@ -256,8 +256,8 @@ class FishManager {
             this.difficultyTimer = 0;
             
             // 調整生成間隔
-            this.spawnInterval = Math.max(60, this.spawnInterval - 10);
-            this.groupSpawnInterval = Math.max(300, this.groupSpawnInterval - 30);
+            this.spawnInterval = Math.max(45, this.spawnInterval - 6);
+            this.groupSpawnInterval = Math.max(260, this.groupSpawnInterval - 24);
             this.bossSpawnInterval = Math.max(900, this.bossSpawnInterval - 60);
             
             // 增加最大魚數量
@@ -295,11 +295,6 @@ class FishManager {
         // 繪製所有魚類
         this.fishes.forEach(fish => {
             fish.draw(ctx);
-            
-            // 如果是Boss魚，繪製血量條
-            if (fish.isBoss && fish.health !== undefined) {
-                this.drawBossHealthBar(ctx, fish);
-            }
         });
         
         // 繪製魚群效果

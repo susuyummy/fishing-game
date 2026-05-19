@@ -87,6 +87,16 @@ class Fish {
             return;
         }
 
+        if (this.isFrozen) {
+            this.freezeTimer -= 16;
+            if (this.freezeTimer <= 0) {
+                this.unfreeze();
+            }
+            this.animationTime += 0.02;
+            this.glowIntensity = Math.min(1, this.glowIntensity + 0.03);
+            return;
+        }
+
         this.animationTime += 0.1;
         this.swimCycle = Math.sin(this.animationTime * 2) * 0.1;
         this.movementTimer += 0.016; // 假設60fps
@@ -222,10 +232,15 @@ class Fish {
     drawAlive(ctx) {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
+        ctx.scale(1 + this.swimCycle * 0.08, 1 - this.swimCycle * 0.03);
         
         // 受傷閃爍效果
         if (this.isInvulnerable && this.invulnerabilityTimer % 10 < 5) {
             ctx.globalAlpha = 0.5;
+        }
+
+        if (typeof GameAssets !== 'undefined' && GameAssets.drawFish(ctx, this)) {
+            return;
         }
         
         // 發光效果
@@ -241,22 +256,40 @@ class Fish {
             ctx.fill();
         }
         
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = this.special ? 18 : 8;
+
         // 魚身
-        ctx.fillStyle = this.color;
+        const bodyGradient = ctx.createLinearGradient(-this.radius, -this.radius, this.radius, this.radius);
+        bodyGradient.addColorStop(0, '#FFFFFF');
+        bodyGradient.addColorStop(0.12, this.color);
+        bodyGradient.addColorStop(0.62, this.color);
+        bodyGradient.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
+        ctx.fillStyle = bodyGradient;
         ctx.beginPath();
         ctx.ellipse(0, 0, this.radius, this.radius * 0.7, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = Math.max(1, this.radius * 0.06);
+        ctx.stroke();
         
         // 魚尾
+        ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.moveTo(-this.radius * 0.8, 0);
-        ctx.lineTo(-this.radius * 1.5, -this.radius * 0.4);
-        ctx.lineTo(-this.radius * 1.2, 0);
-        ctx.lineTo(-this.radius * 1.5, this.radius * 0.4);
+        ctx.quadraticCurveTo(-this.radius * 1.45, -this.radius * (0.48 + this.swimCycle), -this.radius * 1.65, -this.radius * 0.3);
+        ctx.lineTo(-this.radius * 1.18, 0);
+        ctx.quadraticCurveTo(-this.radius * 1.45, this.radius * (0.48 - this.swimCycle), -this.radius * 1.65, this.radius * 0.3);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
         
         // 魚鰭
+        ctx.globalAlpha *= 0.85;
         ctx.beginPath();
         ctx.ellipse(this.radius * 0.2, -this.radius * 0.5, 
                    this.radius * 0.3, this.radius * 0.2, 0, 0, Math.PI * 2);
@@ -265,6 +298,13 @@ class Fish {
         ctx.beginPath();
         ctx.ellipse(this.radius * 0.2, this.radius * 0.5, 
                    this.radius * 0.3, this.radius * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // 高光
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+        ctx.beginPath();
+        ctx.ellipse(this.radius * 0.15, -this.radius * 0.22, this.radius * 0.46, this.radius * 0.16, -0.12, 0, Math.PI * 2);
         ctx.fill();
         
         // 眼睛
@@ -277,26 +317,22 @@ class Fish {
         ctx.beginPath();
         ctx.arc(this.radius * 0.35, -this.radius * 0.2, this.radius * 0.08, 0, Math.PI * 2);
         ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(this.radius * 0.38, -this.radius * 0.23, this.radius * 0.035, 0, Math.PI * 2);
+        ctx.fill();
         
         // 鱗片紋理
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.lineWidth = 1;
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 4; i++) {
             ctx.beginPath();
             ctx.arc(-this.radius * 0.3 + i * this.radius * 0.3, 0, 
                    this.radius * 0.2, 0, Math.PI * 2);
             ctx.stroke();
         }
         
-        // 游泳動畫
-        if (this.swimCycle !== 0) {
-            ctx.scale(1 + this.swimCycle * 0.1, 1);
-        }
-        
-        // 生命值條（當生命值不滿時顯示）
-        if (this.health < this.maxHealth && !this.isDead) {
-            this.drawHealthBar(ctx);
-        }
     }
 
     drawDeathAnimation(ctx) {
@@ -319,30 +355,6 @@ class Fish {
         ctx.moveTo(this.radius * 0.3, -this.radius * 0.3);
         ctx.lineTo(-this.radius * 0.3, this.radius * 0.3);
         ctx.stroke();
-    }
-
-    // 繪製生命值條
-    drawHealthBar(ctx) {
-        const barWidth = this.radius * 1.5;
-        const barHeight = 4;
-        const x = -barWidth / 2;
-        const y = -this.radius - 15;
-        
-        // 背景
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-        ctx.fillRect(x, y, barWidth, barHeight);
-        
-        // 生命值
-        const healthPercent = this.health / this.maxHealth;
-        const healthColor = healthPercent > 0.6 ? '#00FF00' : 
-                           healthPercent > 0.3 ? '#FFFF00' : '#FF0000';
-        ctx.fillStyle = healthColor;
-        ctx.fillRect(x, y, barWidth * healthPercent, barHeight);
-        
-        // 邊框
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, y, barWidth, barHeight);
     }
 
     updateDeathAnimation() {

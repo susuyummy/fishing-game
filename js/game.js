@@ -23,6 +23,9 @@ class FishingGame {
         });
         
         console.log('GAME_CONFIG 檢查通過，開始初始化遊戲');
+        if (typeof GameAssets !== 'undefined') {
+            GameAssets.load();
+        }
         
         // 遊戲狀態
         this.gameState = 'loading'; // loading, playing, paused, gameOver
@@ -47,9 +50,10 @@ class FishingGame {
         this.keys = {};
         
         // 自動射擊系統
-        this.autoShoot = false;
-        this.autoShootInterval = 150; // 自動射擊間隔(毫秒) - 大幅提高速度
+        this.autoShoot = true;
+        this.autoShootInterval = 120; // 自動雷射間隔(毫秒)
         this.lastAutoShoot = 0;
+        this.autoLaserTarget = null;
         
         // 性能監控
         this.fps = 60;
@@ -59,6 +63,8 @@ class FishingGame {
         
         // 特效管理
         this.effects = [];
+        this.autoShoot = true;
+        this.autoLaserTarget = null;
         
         // 音效和設置
         this.soundEnabled = true;
@@ -330,24 +336,20 @@ class FishingGame {
     update(isLowFrameRate = false) {
         const currentTime = Date.now();
         
-        // 自動射擊邏輯
-        if (this.autoShoot && currentTime - this.lastAutoShoot >= this.autoShootInterval) {
-            if (this.coins >= this.currentBet) {
-                this.fire();
-                this.lastAutoShoot = currentTime;
-            }
-        }
-        
         // 更新炮台傷害為當前賭注
         if (this.cannon) {
             this.cannon.setPower(this.currentBet);
         }
-        
-        // 更新炮台
-        this.cannon.update();
-        
+
         // 更新魚類管理器
         this.fishManager.update();
+
+        if (this.autoShoot) {
+            this.updateAutoLaserMode(currentTime);
+        }
+
+        // 更新炮台
+        this.cannon.update();
         
         // 自動閃電攻擊系統
         if (GAME_CONFIG.AUTO_LIGHTNING_MODE) {
@@ -536,7 +538,13 @@ class FishingGame {
                 // 如果魚類死亡，給予金幣獎勵
                 if (hitResult.killed && hitResult.coins > 0) {
                     this.coins += hitResult.coins;
+                    this.totalWinAmount += hitResult.coins;
                     this.showCoinReward(fish.x, fish.y, hitResult.coins);
+                    this.handleFishCaught(fish, hitResult.score, hitResult.coins, {
+                        alreadyRemoved: true,
+                        scoreAlreadyAdded: true,
+                        coinsAlreadyAdded: true
+                    });
                 }
                 
                 // 連擊獎勵
@@ -1365,7 +1373,7 @@ class FishingGame {
     }
 
     checkGameOver() {
-        if (this.score <= 0) {
+        if (this.coins < GAME_CONFIG.BET_SYSTEM.MIN_BET && this.bullets.length === 0) {
             this.gameOver();
         }
     }
@@ -1415,23 +1423,81 @@ class FishingGame {
     }
 
     drawOceanBackground() {
-        // 海洋漸變背景
+        const hasImageBackground = typeof GameAssets !== 'undefined' && GameAssets.drawBackground(this.ctx, this.canvas);
+        if (hasImageBackground) {
+            const shade = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+            shade.addColorStop(0, 'rgba(0, 44, 90, 0.05)');
+            shade.addColorStop(0.72, 'rgba(0, 23, 85, 0.08)');
+            shade.addColorStop(1, 'rgba(0, 0, 38, 0.28)');
+            this.ctx.fillStyle = shade;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            this.drawBubbles();
+
+            const vignette = this.ctx.createRadialGradient(
+                this.canvas.width * 0.5,
+                this.canvas.height * 0.42,
+                120,
+                this.canvas.width * 0.5,
+                this.canvas.height * 0.5,
+                this.canvas.width * 0.76
+            );
+            vignette.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            vignette.addColorStop(1, 'rgba(0, 8, 42, 0.28)');
+            this.ctx.fillStyle = vignette;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            return;
+        }
+
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(0.3, '#4682B4');
-        gradient.addColorStop(0.7, '#1E90FF');
-        gradient.addColorStop(1, '#191970');
+        gradient.addColorStop(0, '#66D9FF');
+        gradient.addColorStop(0.32, '#1594D6');
+        gradient.addColorStop(0.72, '#0B4FAF');
+        gradient.addColorStop(1, '#07194F');
         
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        const time = Date.now() * 0.0005;
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'screen';
+        for (let i = 0; i < 5; i++) {
+            const x = 90 + i * 210 + Math.sin(time + i) * 24;
+            const ray = this.ctx.createLinearGradient(x, 0, x + 110, this.canvas.height);
+            ray.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+            ray.addColorStop(0.55, 'rgba(255, 255, 255, 0.04)');
+            ray.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            this.ctx.fillStyle = ray;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x + 70, 0);
+            this.ctx.lineTo(x + 190, this.canvas.height);
+            this.ctx.lineTo(x - 35, this.canvas.height);
+            this.ctx.closePath();
+            this.ctx.fill();
+        }
+        this.ctx.restore();
         
         // 海底沙子
         const sandGradient = this.ctx.createLinearGradient(0, this.canvas.height - 50, 0, this.canvas.height);
-        sandGradient.addColorStop(0, 'rgba(238, 203, 173, 0.3)');
-        sandGradient.addColorStop(1, 'rgba(238, 203, 173, 0.8)');
+        sandGradient.addColorStop(0, 'rgba(244, 211, 143, 0.15)');
+        sandGradient.addColorStop(1, 'rgba(244, 190, 112, 0.72)');
         
         this.ctx.fillStyle = sandGradient;
         this.ctx.fillRect(0, this.canvas.height - 50, this.canvas.width, 50);
+
+        const vignette = this.ctx.createRadialGradient(
+            this.canvas.width * 0.5,
+            this.canvas.height * 0.42,
+            80,
+            this.canvas.width * 0.5,
+            this.canvas.height * 0.5,
+            this.canvas.width * 0.72
+        );
+        vignette.addColorStop(0, 'rgba(255, 255, 255, 0)');
+        vignette.addColorStop(1, 'rgba(0, 8, 42, 0.38)');
+        this.ctx.fillStyle = vignette;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // 水泡效果
         this.drawBubbles();
@@ -1458,27 +1524,50 @@ class FishingGame {
     }
 
     drawSeaweedAndCoral() {
-        // 簡單的海草
-        this.ctx.strokeStyle = '#228B22';
-        this.ctx.lineWidth = 3;
         this.ctx.lineCap = 'round';
+        const time = Date.now() * 0.001;
         
-        for (let i = 0; i < 5; i++) {
-            const x = i * (this.canvas.width / 5) + 50;
-            const height = 60 + Math.random() * 40;
-            const waveOffset = Date.now() * 0.001 + i;
+        for (let i = 0; i < 9; i++) {
+            const x = 45 + i * 112;
+            const height = 42 + (i % 4) * 15;
+            const waveOffset = time + i * 0.7;
             
+            this.ctx.strokeStyle = i % 3 === 0 ? '#19B36A' : '#0F8E70';
+            this.ctx.lineWidth = 3 + (i % 2);
             this.ctx.beginPath();
             this.ctx.moveTo(x, this.canvas.height);
             
             for (let j = 0; j < height; j += 5) {
-                const waveX = x + Math.sin(waveOffset + j * 0.1) * (j * 0.1);
+                const waveX = x + Math.sin(waveOffset + j * 0.08) * (j * 0.08);
                 const y = this.canvas.height - j;
                 this.ctx.lineTo(waveX, y);
             }
             
             this.ctx.stroke();
         }
+
+        const coralClusters = [
+            { x: 120, color: '#FF6F91' },
+            { x: 850, color: '#FFB347' },
+            { x: 930, color: '#B388FF' }
+        ];
+
+        coralClusters.forEach((coral, index) => {
+            this.ctx.strokeStyle = coral.color;
+            this.ctx.lineWidth = 4;
+            const baseY = this.canvas.height - 14;
+            for (let branch = 0; branch < 4; branch++) {
+                const offset = branch * 9 - 14;
+                this.ctx.beginPath();
+                this.ctx.moveTo(coral.x + offset, baseY);
+                this.ctx.quadraticCurveTo(coral.x + offset + 8, baseY - 18 - branch * 4, coral.x + offset + 2, baseY - 34 - branch * 5);
+                this.ctx.stroke();
+            }
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+            this.ctx.beginPath();
+            this.ctx.arc(coral.x + 26, baseY - 12 - index * 4, 9, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
     }
 
     drawUIOverlay() {
@@ -1633,45 +1722,298 @@ class FishingGame {
     }
 
     // 遊戲操作
-    fire() {
+    fire(options = {}) {
         if (this.cannon.canFire()) {
+            const target = options.target || this.acquireLaserTarget(options.auto ? 'auto' : 'manual');
+            if (!this.isLaserTargetValid(target)) {
+                if (options.target === this.autoLaserTarget) {
+                    this.autoLaserTarget = null;
+                }
+                if (!options.silentNoTarget) {
+                    this.showMessage('沒有可鎖定目標', 900);
+                }
+                return false;
+            }
+
             // 檢查是否有足夠金幣
             if (this.coins < this.currentBet) {
                 this.showInsufficientCoins();
-                return;
+                return false;
             }
             
             // 扣除賭注金額
             this.coins -= this.currentBet;
+            this.totalBetAmount += this.currentBet;
+            this.jackpot.amount += Math.max(1, Math.floor(this.currentBet * GAME_CONFIG.JACKPOT_SYSTEM.ACCUMULATION_RATE));
             console.log(`射擊扣除 ${this.currentBet} 金幣，剩餘 ${this.coins} 金幣`);
             
-            // 傳遞當前賭注作為傷害值
-            const bullet = this.cannon.fire(this.currentBet);
-            if (bullet) {
-                this.bullets.push(bullet);
+            const muzzle = this.cannon.fireLaser(target.x, target.y);
+            if (muzzle) {
                 this.gameStats.totalShots++;
-                
-                // 自動瞄準最近的魚
-                if (this.cannon.autoAim) {
-                    const closestFish = this.fishManager.getClosestFish(this.cannon.x, this.cannon.y);
-                    if (closestFish) {
-                        bullet.setHomingTarget(closestFish);
-                    }
-                }
-                
-                // 更新準確率
+                this.fireLockOnLaser(muzzle, target, options.auto ? 'auto' : 'manual');
                 this.gameStats.accuracy = (this.gameStats.totalHits / this.gameStats.totalShots) * 100;
+            }
+            return !!muzzle;
+        }
+        return false;
+    }
+
+    updateAutoLaserMode(currentTime) {
+        if (this.coins < this.currentBet) {
+            this.autoShoot = false;
+            this.autoLaserTarget = null;
+            this.updateAutoShootButton();
+            this.showInsufficientCoins();
+            return;
+        }
+
+        if (!this.isLaserTargetValid(this.autoLaserTarget)) {
+            this.autoLaserTarget = this.acquireLaserTarget('auto');
+        }
+
+        const target = this.autoLaserTarget;
+        if (!target) {
+            return;
+        }
+
+        const predicted = this.getPredictedFishPoint(target, 14);
+        this.cannon.setTarget(predicted.x, predicted.y);
+
+        if (currentTime - this.lastAutoShoot >= this.autoShootInterval && this.cannon.canFire()) {
+            const fired = this.fire({
+                target,
+                auto: true,
+                silentNoTarget: true
+            });
+            if (fired) {
+                this.lastAutoShoot = currentTime;
             }
         }
     }
 
+    getPredictedFishPoint(fish, frames = 10) {
+        const padding = 8;
+        return {
+            x: Utils.clamp(fish.x + fish.vx * frames, padding, this.canvas.width - padding),
+            y: Utils.clamp(fish.y + fish.vy * frames, padding, this.canvas.height - padding)
+        };
+    }
+
+    isFishInsideLaserView(fish) {
+        if (!fish || fish.isDead) return false;
+        const radius = fish.radius || 0;
+        return (
+            fish.x - radius >= 0 &&
+            fish.x + radius <= this.canvas.width &&
+            fish.y - radius >= 0 &&
+            fish.y + radius <= this.canvas.height
+        );
+    }
+
+    isLaserTargetValid(fish) {
+        return !!fish && !fish.isDead && this.isFishInsideLaserView(fish);
+    }
+
+    acquireLaserTarget(mode = 'manual') {
+        const fishes = this.fishManager.fishes.filter(fish => (
+            this.isLaserTargetValid(fish)
+        ));
+        if (fishes.length === 0) return null;
+
+        const aimX = mode === 'auto' ? this.cannon.x : (this.mouse.x || this.cannon.targetX || this.cannon.x);
+        const aimY = mode === 'auto' ? this.cannon.y : (this.mouse.y || this.cannon.targetY || this.cannon.y);
+
+        return fishes
+            .map(fish => {
+                const aimDistance = Utils.getDistance(aimX, aimY, fish.x, fish.y);
+                const cannonDistance = Utils.getDistance(this.cannon.x, this.cannon.y, fish.x, fish.y);
+                const valueBias = Math.min(fish.score * 0.6, 160);
+                const centerBias = mode === 'auto'
+                    ? Utils.getDistance(this.canvas.width * 0.5, this.canvas.height * 0.45, fish.x, fish.y) * 0.12
+                    : 0;
+                return {
+                    fish,
+                    score: aimDistance * 0.5 + cannonDistance * 0.22 + centerBias - valueBias
+                };
+            })
+            .sort((a, b) => a.score - b.score)[0].fish;
+    }
+
+    getLaserDamage(mode = 'manual') {
+        const balance = GAME_CONFIG.LASER_BALANCE || {};
+        const scale = mode === 'auto'
+            ? (balance.AUTO_DAMAGE_SCALE || 0.22)
+            : (balance.MANUAL_DAMAGE_SCALE || 0.35);
+
+        return Math.max(balance.MIN_DAMAGE || 1, this.currentBet * scale);
+    }
+
+    fireLockOnLaser(muzzle, target, mode = 'manual') {
+        const damage = this.getLaserDamage(mode);
+        this.createLockOnLaserEffect(muzzle.x, muzzle.y, target);
+        this.createMiniLightningEffect(target.x, target.y);
+
+        const hitResult = this.fishManager.hitFish(target, damage);
+        if (hitResult.score > 0) {
+            this.addScore(hitResult.score);
+            this.gameStats.totalHits++;
+            this.gameStats.currentCombo++;
+
+            if (this.gameStats.currentCombo > this.gameStats.highestCombo) {
+                this.gameStats.highestCombo = this.gameStats.currentCombo;
+            }
+
+            if (hitResult.killed && hitResult.coins > 0) {
+                this.coins += hitResult.coins;
+                this.totalWinAmount += hitResult.coins;
+                this.showCoinReward(target.x, target.y, hitResult.coins);
+                if (target === this.autoLaserTarget) {
+                    this.autoLaserTarget = null;
+                }
+                this.handleFishCaught(target, hitResult.score, hitResult.coins, {
+                    alreadyRemoved: true,
+                    scoreAlreadyAdded: true,
+                    coinsAlreadyAdded: true
+                });
+            }
+
+            this.showLightningDamage(target.x, target.y, Math.ceil(damage));
+            this.particles.push(...Utils.createParticles(target.x, target.y, 18, '#00FFFF'));
+
+            if (hitResult.killed) {
+                this.triggerChainReaction(target, damage);
+            }
+        } else {
+            this.gameStats.currentCombo = 0;
+            this.stats.combo = 0;
+        }
+    }
+
+    createLockOnLaserEffect(startX, startY, target) {
+        const effect = {
+            startX,
+            startY,
+            target,
+            life: 1,
+            decay: 0.12,
+            pulse: 0,
+            jitterSeed: Math.random() * Math.PI * 2,
+            shouldRemove: false,
+            update() {
+                this.life -= this.decay;
+                this.pulse += 0.52;
+                if (this.life <= 0) this.shouldRemove = true;
+            },
+            draw(ctx) {
+                const endX = this.target.x;
+                const endY = this.target.y;
+                const alpha = Math.max(0, this.life);
+                const dx = endX - this.startX;
+                const dy = endY - this.startY;
+                const distance = Math.max(1, Math.hypot(dx, dy));
+                const normalX = -dy / distance;
+                const normalY = dx / distance;
+                const segments = Math.max(5, Math.min(13, Math.floor(distance / 58)));
+                const boltPoints = [];
+
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const fork = i === 0 || i === segments
+                        ? 0
+                        : Math.sin(this.pulse * 1.7 + this.jitterSeed + i * 2.4) * (10 + alpha * 8);
+                    boltPoints.push({
+                        x: this.startX + dx * t + normalX * fork,
+                        y: this.startY + dy * t + normalY * fork
+                    });
+                }
+
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                const beamGradient = ctx.createLinearGradient(this.startX, this.startY, endX, endY);
+                beamGradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+                beamGradient.addColorStop(0.35, `rgba(0, 255, 255, ${0.95 * alpha})`);
+                beamGradient.addColorStop(1, `rgba(255, 55, 210, ${0.88 * alpha})`);
+
+                ctx.strokeStyle = `rgba(0, 210, 255, ${0.2 * alpha})`;
+                ctx.lineWidth = 28;
+                ctx.beginPath();
+                boltPoints.forEach((point, index) => {
+                    if (index === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                });
+                ctx.stroke();
+
+                ctx.strokeStyle = beamGradient;
+                ctx.lineWidth = 10 + Math.sin(this.pulse) * 2;
+                ctx.beginPath();
+                boltPoints.forEach((point, index) => {
+                    if (index === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                });
+                ctx.stroke();
+
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                boltPoints.forEach((point, index) => {
+                    if (index === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                });
+                ctx.stroke();
+
+                for (let i = 1; i < boltPoints.length - 1; i += 2) {
+                    const point = boltPoints[i];
+                    const branchLength = 18 + Math.sin(this.pulse + i) * 8;
+                    const direction = (i % 4 === 1 ? 1 : -1);
+                    ctx.strokeStyle = `rgba(159, 241, 255, ${0.72 * alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(point.x, point.y);
+                    ctx.lineTo(
+                        point.x + normalX * branchLength * direction + dx / distance * 9,
+                        point.y + normalY * branchLength * direction + dy / distance * 9
+                    );
+                    ctx.stroke();
+                }
+
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.9 * alpha})`;
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 5; i++) {
+                    const angle = this.pulse + i * Math.PI * 0.4;
+                    ctx.beginPath();
+                    ctx.moveTo(endX + Math.cos(angle) * 16, endY + Math.sin(angle) * 16);
+                    ctx.lineTo(endX + Math.cos(angle) * 42, endY + Math.sin(angle) * 42);
+                    ctx.stroke();
+                }
+
+                ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(endX, endY, 24 + (1 - alpha) * 30, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        this.effects.push(effect);
+    }
+
     toggleAutoShoot() {
         this.autoShoot = !this.autoShoot;
+        this.lastAutoShoot = 0;
+        this.updateAutoShootButton();
+        this.showMessage(this.autoShoot ? '雷射自動鎖定已開啟' : '雷射自動鎖定已關閉');
+    }
+
+    updateAutoShootButton() {
         const autoShootBtn = document.getElementById('autoShootBtn');
         if (autoShootBtn) {
-            autoShootBtn.textContent = this.autoShoot ? '自動射擊: 開' : '自動射擊: 關';
+            autoShootBtn.textContent = this.autoShoot ? '雷射自動: 開' : '雷射自動: 關';
+            autoShootBtn.classList.toggle('active', this.autoShoot);
         }
-        this.showMessage(this.autoShoot ? '自動射擊已開啟' : '自動射擊已關閉');
     }
 
     togglePause() {
@@ -1703,6 +2045,30 @@ class FishingGame {
         
         this.score += finalPoints;
         this.score = Math.max(0, this.score);
+    }
+
+    upgradeCannon() {
+        if (!this.cannon) return false;
+
+        const upgradeCost = this.cannon.getUpgradeCost();
+        if (upgradeCost <= 0) {
+            this.showMessage('炮台已達最高等級');
+            return false;
+        }
+
+        if (this.coins < upgradeCost) {
+            this.showMessage(`升級需要 ${Utils.formatNumber(upgradeCost)} 金幣`);
+            return false;
+        }
+
+        if (this.cannon.upgrade()) {
+            this.coins -= upgradeCost;
+            this.showMessage(`炮台升級到 ${this.cannon.level + 1} 級`);
+            this.updateUI();
+            return true;
+        }
+
+        return false;
     }
 
     addScreenShake(intensity) {
@@ -1841,6 +2207,8 @@ class FishingGame {
         this.isPaused = false;
         
         document.getElementById('finalScore').textContent = Utils.formatNumber(this.score);
+        document.getElementById('finalFishCount').textContent = this.stats.fishCaught;
+        document.getElementById('finalCombo').textContent = Math.max(this.stats.maxCombo, this.gameStats.highestCombo);
         document.getElementById('gameOver').classList.remove('hidden');
         
         Utils.playSound('gameOver');
@@ -1887,6 +2255,9 @@ class FishingGame {
         
         // 創建成就面板
         this.createAchievementPanel();
+
+        this.updateMissionUI();
+        this.updateAchievementUI();
         
         // 更新所有UI
         this.updateUI();
@@ -2173,7 +2544,8 @@ class FishingGame {
             const distance = Utils.getDistance(fish.x, fish.y, centerX, centerY);
             if (distance <= bombRadius) {
                 const damage = this.currentBet * 2; // 爆彈傷害是賭注的2倍
-                if (fish.takeDamage(damage)) {
+                const result = fish.takeDamage(damage);
+                if (result.killed) {
                     this.handleFishCaught(fish);
                 }
             }
@@ -2204,7 +2576,8 @@ class FishingGame {
         this.fishManager.fishes.forEach(fish => {
             if (Math.abs(fish.y - laserY) <= 50) { // 雷射寬度50px
                 const damage = this.currentBet * 3; // 雷射傷害是賭注的3倍
-                if (fish.takeDamage(damage)) {
+                const result = fish.takeDamage(damage);
+                if (result.killed) {
                     this.handleFishCaught(fish);
                 }
             }
@@ -2228,6 +2601,7 @@ class FishingGame {
             if (distance <= netRadius) {
                 // 捕魚網有更高的捕獲率
                 if (Math.random() < 0.8) {
+                    fish.die();
                     this.handleFishCaught(fish);
                 }
             }
@@ -2246,7 +2620,7 @@ class FishingGame {
         // 檢查GAME_CONFIG是否存在
         if (!GAME_CONFIG || !GAME_CONFIG.ITEMS) {
             console.error('GAME_CONFIG.ITEMS 未定義');
-            alert('遊戲配置錯誤：道具系統未正確載入');
+            this.showMessage('道具系統未正確載入');
             return;
         }
         
@@ -2272,14 +2646,14 @@ class FishingGame {
         
         if (!config) {
             console.error(`道具配置不存在: ${itemName} -> ${configKey}`);
-            alert(`道具配置錯誤：找不到 ${itemName} 的配置`);
+            this.showMessage(`找不到 ${itemName} 的配置`);
             return;
         }
         
         // 檢查cost屬性
         if (typeof config.cost === 'undefined') {
             console.error(`道具 ${itemName} 缺少cost屬性`);
-            alert(`道具配置錯誤：${itemName} 缺少價格信息`);
+            this.showMessage(`${itemName} 缺少價格信息`);
             return;
         }
         
@@ -2290,7 +2664,6 @@ class FishingGame {
         if (this.coins < config.cost) {
             console.log('金幣不足，顯示提示');
             this.showMessage('金幣不足！');
-            alert(`金幣不足！需要 ${config.cost} 金幣，目前只有 ${this.coins} 金幣`);
             return;
         }
         
@@ -2306,14 +2679,12 @@ class FishingGame {
                 this.items.doubleScore.duration = config.duration;
                 console.log('雙倍得分啟動！持續時間:', config.duration);
                 this.showMessage('雙倍得分啟動！');
-                alert('雙倍得分已啟動！15秒內得分翻倍');
                 break;
             case 'luckyShot':
                 this.items.luckyShot.active = true;
                 this.items.luckyShot.uses = config.uses;
                 console.log('幸運一擊啟動！次數:', config.uses);
                 this.showMessage('幸運一擊啟動！');
-                alert(`幸運一擊已啟動！剩餘 ${config.uses} 次高成功率射擊`);
                 break;
             case 'rapidFire':
                 this.items.rapidFire.active = true;
@@ -2323,15 +2694,14 @@ class FishingGame {
                     console.log('連發模式啟動！持續時間:', config.duration);
                     console.log('炮台射速已調整為:', this.cannon.fireRate);
                     this.showMessage('連發模式啟動！');
-                    alert('連發模式已啟動！10秒內射擊速度翻倍');
                 } else {
                     console.error('炮台對象不存在或缺少setRapidFire方法');
-                    alert('連發模式啟動失敗：炮台系統錯誤');
+                    this.showMessage('連發模式啟動失敗');
                 }
                 break;
             default:
                 console.error(`未知的道具類型: ${itemName}`);
-                alert(`未知的道具類型: ${itemName}`);
+                this.showMessage(`未知的道具類型: ${itemName}`);
                 return;
         }
         
@@ -2344,14 +2714,20 @@ class FishingGame {
     spawnBoss() {
         const bossTypes = GAME_CONFIG.BOSS_SYSTEM.BOSS_TYPES;
         const bossType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
-        
-        // 創建BOSS魚
-        // 找到對應的BOSS魚類索引
-        const bossTypeIndex = GAME_CONFIG.FISH_TYPES.findIndex(type => 
-            type.special === 'boss' && type.name === bossType.name
-        );
-        
-        const boss = new Fish(this.canvas.width / 2, this.canvas.height / 2, bossTypeIndex !== -1 ? bossTypeIndex : 9);
+
+        const boss = new Fish(this.canvas.width / 2, this.canvas.height / 2, {
+            name: bossType.name,
+            size: bossType.size,
+            speed: bossType.speed,
+            color: bossType.color,
+            score: bossType.score,
+            health: bossType.health,
+            catchRate: 0.15,
+            special: 'boss'
+        });
+        boss.isBoss = true;
+        boss.health = bossType.health;
+        boss.maxHealth = bossType.health;
         this.fishManager.addBoss(boss);
         
         this.bossSystem.activeBoss = boss;
@@ -2469,7 +2845,10 @@ class FishingGame {
     }
     
     // 新增：處理魚類被捕獲
-    handleFishCaught(fish) {
+    handleFishCaught(fish, scoreOverride = null, coinsOverride = null, options = {}) {
+        if (!fish || fish._rewardHandled) return;
+        fish._rewardHandled = true;
+
         // 檢查特殊能力
         if (fish.special) {
             const specialEffect = fish.triggerSpecialAbility();
@@ -2479,18 +2858,24 @@ class FishingGame {
         }
         
         // 計算得分
-        let score = fish.score;
+        let score = scoreOverride !== null ? scoreOverride : fish.score;
         
         // 道具效果：雙倍得分
-        if (this.items.doubleScore.active) {
+        if (!options.scoreAlreadyAdded && this.items.doubleScore.active) {
             score *= 2;
         }
         
         // 添加得分
-        this.addScore(score);
+        if (!options.scoreAlreadyAdded) {
+            this.addScore(score);
+        }
         
         // 獲得金幣
-        this.coins += Math.floor(score / 2);
+        const coinReward = coinsOverride !== null ? coinsOverride : Math.floor(score / 2);
+        if (!options.coinsAlreadyAdded) {
+            this.coins += coinReward;
+            this.totalWinAmount += coinReward;
+        }
         
         // 更新統計
         this.stats.fishCaught++;
@@ -2511,7 +2896,9 @@ class FishingGame {
         this.checkJackpot();
         
         // 移除魚類
-        this.fishManager.removeFish(fish);
+        if (!options.alreadyRemoved) {
+            this.fishManager.removeFish(fish);
+        }
         
         // 創建得分效果
         Utils.createScoreFloat(fish.x, fish.y, score);
@@ -2530,7 +2917,8 @@ class FishingGame {
                 this.fishManager.fishes.forEach(otherFish => {
                     const distance = Utils.getDistance(fish.x, fish.y, otherFish.x, otherFish.y);
                     if (distance <= effect.radius && otherFish !== fish) {
-                        if (otherFish.takeDamage(effect.damage)) {
+                        const result = otherFish.takeDamage(effect.damage);
+                        if (result.killed) {
                             this.handleFishCaught(otherFish);
                         }
                     }
@@ -2565,8 +2953,8 @@ class FishingGame {
     // 重寫：更新UI方法，包含新功能
     updateUI() {
         // 更新基本信息 - 支援兩種UI佈局
-        const scoreElement = document.getElementById('score') || document.getElementById('scoreValue');
-        const coinsElement = document.getElementById('coins') || document.getElementById('coinsValue');
+        const scoreElement = document.getElementById('scoreValue') || document.getElementById('score');
+        const coinsElement = document.getElementById('coinsValue') || document.getElementById('coins');
         const betElement = document.getElementById('currentBet') || document.getElementById('betValue');
         
         if (scoreElement) scoreElement.textContent = Utils.formatNumber(this.score);
@@ -2581,7 +2969,9 @@ class FishingGame {
         const attackStatus = document.getElementById('attackStatus');
         
         if (cannonLevelValue && this.cannon) cannonLevelValue.textContent = this.cannon.level + 1;
-        if (damageValue) damageValue.textContent = this.currentBet;
+        if (damageValue) {
+            damageValue.textContent = Math.ceil(this.getLaserDamage(this.autoShoot ? 'auto' : 'manual'));
+        }
         
         // 更新賭注按鈕狀態
         if (decreaseBetBtn && increaseBetBtn) {
@@ -2599,11 +2989,7 @@ class FishingGame {
             attackStatus.style.color = canAttack ? '#00FF00' : '#FF4444';
         }
         
-        // 更新自動射擊按鈕
-        const autoShootBtn = document.getElementById('autoShootBtn');
-        if (autoShootBtn) {
-            autoShootBtn.textContent = this.autoShoot ? '自動射擊: 開' : '自動射擊: 關';
-        }
+        this.updateAutoShootButton();
         
         // 更新技能按鈕狀態
         const skillButtons = {
@@ -2663,7 +3049,12 @@ class FishingGame {
             const btn = document.getElementById(btnId);
             if (btn) {
                 const item = this.items[itemName];
-                const config = GAME_CONFIG?.ITEMS?.[itemName.toUpperCase()];
+                const configKey = {
+                    doubleScore: 'DOUBLE_SCORE',
+                    luckyShot: 'LUCKY_SHOT',
+                    rapidFire: 'RAPID_FIRE'
+                }[itemName] || itemName.toUpperCase();
+                const config = GAME_CONFIG?.ITEMS?.[configKey];
                 
                 if (item.active) {
                     btn.className = 'item-btn active';
@@ -2706,8 +3097,6 @@ class FishingGame {
         // 更新連擊顯示
         this.updateComboDisplay();
         
-        // 更新BOSS血量條
-        this.updateBossHealthBar();
     }
     
     // 新增：更新彩金顯示
@@ -2738,34 +3127,6 @@ class FishingGame {
             comboDisplay.className = 'combo-display active';
         } else if (comboDisplay) {
             comboDisplay.className = 'combo-display';
-        }
-    }
-    
-    // 新增：更新BOSS血量條
-    updateBossHealthBar() {
-        let bossHealthBar = document.getElementById('bossHealthBar');
-        
-        if (this.bossSystem.activeBoss) {
-            if (!bossHealthBar) {
-                bossHealthBar = document.createElement('div');
-                bossHealthBar.id = 'bossHealthBar';
-                bossHealthBar.className = 'boss-health-bar';
-                bossHealthBar.innerHTML = `
-                    <div class="boss-name">BOSS</div>
-                    <div class="boss-health-fill" id="bossHealthFill"></div>
-                `;
-                document.body.appendChild(bossHealthBar);
-            }
-            
-            const healthPercent = (this.bossSystem.bossHealth / this.bossSystem.maxBossHealth) * 100;
-            const healthFill = document.getElementById('bossHealthFill');
-            if (healthFill) {
-                healthFill.style.width = healthPercent + '%';
-            }
-            
-            bossHealthBar.style.display = 'block';
-        } else if (bossHealthBar) {
-            bossHealthBar.style.display = 'none';
         }
     }
 } 
