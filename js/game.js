@@ -2269,6 +2269,10 @@ class FishingGame {
         this.updateUI();
     }
     
+    shouldHideFloatingPanels() {
+        return window.innerWidth <= 900 || window.innerHeight <= 760;
+    }
+
     createSkillButtons() {
         console.log('創建技能按鈕，檢查GAME_CONFIG:', typeof GAME_CONFIG, GAME_CONFIG?.SPECIAL_SKILLS);
         
@@ -2347,10 +2351,14 @@ class FishingGame {
         
         console.log('技能按鈕創建完成，總共創建了', document.querySelectorAll('.skill-btn').length, '個按鈕');
         
-        // 確保面板可見
+        // 確保面板在足夠大的螢幕可見，小螢幕則避免覆蓋遊戲畫面
         setTimeout(() => {
             const panel = document.getElementById('skillPanel');
             if (panel) {
+                if (this.shouldHideFloatingPanels()) {
+                    panel.style.setProperty('display', 'none', 'important');
+                    return;
+                }
                 panel.style.display = 'block';
                 panel.style.visibility = 'visible';
                 panel.style.opacity = '1';
@@ -2430,10 +2438,14 @@ class FishingGame {
         
         console.log('道具按鈕創建完成，總共創建了', document.querySelectorAll('.item-btn').length, '個按鈕');
         
-        // 確保面板可見
+        // 確保面板在足夠大的螢幕可見，小螢幕則避免覆蓋遊戲畫面
         setTimeout(() => {
             const panel = document.getElementById('itemPanel');
             if (panel) {
+                if (this.shouldHideFloatingPanels()) {
+                    panel.style.setProperty('display', 'none', 'important');
+                    return;
+                }
                 panel.style.display = 'block';
                 panel.style.visibility = 'visible';
                 panel.style.opacity = '1';
