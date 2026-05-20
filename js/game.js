@@ -125,8 +125,7 @@ class FishingGame {
             lastWin: 0
         };
         
-        // 初始化任務和成就系統
-        this.missions = GAME_CONFIG.MISSIONS.map(m => ({...m, progress: 0, completed: false}));
+        // 捕魚機玩法保留成就，不使用任務面板，避免畫面被非核心目標干擾
         this.achievements = GAME_CONFIG.ACHIEVEMENTS.map(a => ({...a, unlocked: false}));
         
         // 初始化統計數據
@@ -2256,13 +2255,9 @@ class FishingGame {
         // 創建道具按鈕
         this.createItemButtons();
         
-        // 創建任務面板
-        this.createMissionPanel();
-        
         // 創建成就面板
         this.createAchievementPanel();
 
-        this.updateMissionUI();
         this.updateAchievementUI();
         
         // 更新所有UI
@@ -2452,17 +2447,6 @@ class FishingGame {
                 console.log('道具面板強制設置為可見');
             }
         }, 100);
-    }
-    
-    createMissionPanel() {
-        const missionPanel = document.createElement('div');
-        missionPanel.id = 'missionPanel';
-        missionPanel.className = 'mission-panel';
-        missionPanel.innerHTML = `
-            <h3>任務</h3>
-            <div id="missionList"></div>
-        `;
-        document.body.appendChild(missionPanel);
     }
     
     createAchievementPanel() {
@@ -2799,22 +2783,6 @@ class FishingGame {
         }, duration);
     }
     
-    // 新增：更新任務進度
-    updateMissionProgress(type, value) {
-        this.missions.forEach(mission => {
-            if (mission.type === type && !mission.completed) {
-                mission.progress += value;
-                if (mission.progress >= mission.target) {
-                    mission.completed = true;
-                    this.coins += mission.reward;
-                    this.showMessage(`🎉 任務完成：${mission.name}！獲得 ${mission.reward} 金幣！`);
-                }
-            }
-        });
-        
-        this.updateMissionUI();
-    }
-    
     // 新增：解鎖成就
     unlockAchievement(achievementId) {
         const achievement = this.achievements.find(a => a.id === achievementId);
@@ -2824,24 +2792,6 @@ class FishingGame {
             this.showMessage(`🏆 成就解鎖：${achievement.name}！獲得 ${achievement.reward} 金幣！`);
             this.updateAchievementUI();
         }
-    }
-    
-    // 新增：更新任務UI
-    updateMissionUI() {
-        const missionList = document.getElementById('missionList');
-        if (!missionList) return;
-        
-        missionList.innerHTML = '';
-        this.missions.forEach(mission => {
-            const missionDiv = document.createElement('div');
-            missionDiv.className = `mission-item ${mission.completed ? 'completed' : ''}`;
-            missionDiv.innerHTML = `
-                <div class="mission-name">${mission.name}</div>
-                <div class="mission-description">${mission.description}</div>
-                <div class="mission-progress">${mission.progress}/${mission.target}</div>
-            `;
-            missionList.appendChild(missionDiv);
-        });
     }
     
     // 新增：更新成就UI
@@ -2899,11 +2849,6 @@ class FishingGame {
         this.stats.fishCaught++;
         this.stats.combo++;
         this.comboTimer = this.comboTimeLimit;
-        
-        // 更新任務進度
-        this.updateMissionProgress('catch_count', 1);
-        this.updateMissionProgress('score', score);
-        this.updateMissionProgress('combo', this.stats.combo);
         
         // 檢查成就
         if (this.stats.fishCaught >= 100) {
