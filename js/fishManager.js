@@ -130,6 +130,7 @@ class FishManager {
         const position = this.getRandomSpawnPosition();
         
         const fish = new Fish(position.x, position.y, type);
+        this.configureFishEntry(fish, position);
         this.fishes.push(fish);
         this.totalFishSpawned++;
     }
@@ -141,6 +142,7 @@ class FishManager {
         const position = this.getRandomSpawnPosition();
         
         const group = new FishGroup(position.x, position.y, groupType, fishType, fishCount);
+        this.configureFishGroupEntry(group, position);
         this.fishGroups.push(group);
         
         // 將魚群的魚添加到主魚群中
@@ -167,6 +169,7 @@ class FishManager {
         boss.isBoss = true;
         boss.health = boss.score * 2; // Boss有更多血量
         boss.maxHealth = boss.health;
+        this.configureFishEntry(boss, position);
         
         this.currentBoss = boss;
         this.fishes.push(boss);
@@ -249,6 +252,40 @@ class FishManager {
                     y: this.canvas.height + margin
                 };
         }
+    }
+
+    getRandomPlayfieldPoint() {
+        return {
+            x: Utils.random(this.canvas.width * 0.18, this.canvas.width * 0.82),
+            y: Utils.random(this.canvas.height * 0.22, this.canvas.height * 0.82)
+        };
+    }
+
+    configureFishEntry(fish, spawnPosition) {
+        const target = this.getRandomPlayfieldPoint();
+        const dx = target.x - spawnPosition.x;
+        const dy = target.y - spawnPosition.y;
+        const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const speed = fish.speed || 1;
+
+        fish.vx = (dx / distance) * speed;
+        fish.vy = (dy / distance) * speed;
+        fish.angle = Utils.getAngle(0, 0, fish.vx, fish.vy);
+        fish.centerX = target.x;
+        fish.centerY = target.y;
+        fish.orbitRadius = Utils.random(45, 95);
+        fish.movementType = Math.random() < 0.68 ? 0 : Utils.randomInt(1, 2);
+    }
+
+    configureFishGroupEntry(group, spawnPosition) {
+        const target = this.getRandomPlayfieldPoint();
+        const dx = target.x - spawnPosition.x;
+        const dy = target.y - spawnPosition.y;
+        group.direction = Math.atan2(dy, dx);
+
+        group.fishes.forEach(fish => {
+            this.configureFishEntry(fish, spawnPosition);
+        });
     }
 
     updateDifficulty() {

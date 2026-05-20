@@ -2103,37 +2103,7 @@ class FishingGame {
     }
 
     showComboEffect(x, y, combo) {
-        const effect = {
-            x: x,
-            y: y,
-            combo: combo,
-            life: 1,
-            decay: 0.02,
-            scale: 0,
-            shouldRemove: false,
-            update() {
-                this.life -= this.decay;
-                this.scale = Math.sin(this.life * Math.PI) * 2;
-                this.y -= 1;
-                if (this.life <= 0) {
-                    this.shouldRemove = true;
-                }
-            },
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.scale(this.scale, this.scale);
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = '#FFD700';
-                ctx.font = 'bold 20px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(`連擊 x${this.combo}!`, 0, 0);
-                ctx.restore();
-            }
-        };
-        
-        this.effects.push(effect);
+        return;
     }
 
     // 新增：顯示電擊傷害數字
@@ -2731,6 +2701,9 @@ class FishingGame {
         boss.isBoss = true;
         boss.health = bossType.health;
         boss.maxHealth = bossType.health;
+        boss.centerX = Utils.random(this.canvas.width * 0.24, this.canvas.width * 0.76);
+        boss.centerY = Utils.random(this.canvas.height * 0.25, this.canvas.height * 0.78);
+        boss.movementType = Math.random() < 0.72 ? 0 : 1;
         boss.vx = spawn.vx || Utils.random(-bossType.speed * 0.7, bossType.speed * 0.7);
         boss.vy = spawn.vy || Utils.random(-bossType.speed * 0.7, bossType.speed * 0.7);
         boss.angle = Utils.getAngle(0, 0, boss.vx, boss.vy);
@@ -3048,19 +3021,9 @@ class FishingGame {
     
     // 新增：更新連擊顯示
     updateComboDisplay() {
-        let comboDisplay = document.getElementById('comboDisplay');
-        if (this.stats.combo > 1) {
-            if (!comboDisplay) {
-                comboDisplay = document.createElement('div');
-                comboDisplay.id = 'comboDisplay';
-                comboDisplay.className = 'combo-display';
-                document.body.appendChild(comboDisplay);
-            }
-            
-            comboDisplay.textContent = `${this.stats.combo} 連擊！`;
-            comboDisplay.className = 'combo-display active';
-        } else if (comboDisplay) {
-            comboDisplay.className = 'combo-display';
+        const comboDisplay = document.getElementById('comboDisplay');
+        if (comboDisplay) {
+            comboDisplay.remove();
         }
     }
 } 
