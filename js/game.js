@@ -125,9 +125,6 @@ class FishingGame {
             lastWin: 0
         };
         
-        // 捕魚機玩法保留成就，不使用任務面板，避免畫面被非核心目標干擾
-        this.achievements = GAME_CONFIG.ACHIEVEMENTS.map(a => ({...a, unlocked: false}));
-        
         // 初始化統計數據
         this.stats = {
             fishCaught: 0,
@@ -2255,11 +2252,6 @@ class FishingGame {
         // 創建道具按鈕
         this.createItemButtons();
         
-        // 創建成就面板
-        this.createAchievementPanel();
-
-        this.updateAchievementUI();
-        
         // 更新所有UI
         this.updateUI();
     }
@@ -2447,17 +2439,6 @@ class FishingGame {
                 console.log('道具面板強制設置為可見');
             }
         }, 100);
-    }
-    
-    createAchievementPanel() {
-        const achievementPanel = document.createElement('div');
-        achievementPanel.id = 'achievementPanel';
-        achievementPanel.className = 'achievement-panel';
-        achievementPanel.innerHTML = `
-            <h3>成就</h3>
-            <div id="achievementList"></div>
-        `;
-        document.body.appendChild(achievementPanel);
     }
     
     // 新增：使用技能
@@ -2760,9 +2741,6 @@ class FishingGame {
             // 重置彩金獎池
             this.jackpot.amount = jackpotConfig.BASE_AMOUNT;
             
-            // 解鎖成就
-            this.unlockAchievement('jackpot_winner');
-            
             return true;
         }
         
@@ -2781,35 +2759,6 @@ class FishingGame {
                 messageDiv.parentNode.removeChild(messageDiv);
             }
         }, duration);
-    }
-    
-    // 新增：解鎖成就
-    unlockAchievement(achievementId) {
-        const achievement = this.achievements.find(a => a.id === achievementId);
-        if (achievement && !achievement.unlocked) {
-            achievement.unlocked = true;
-            this.coins += achievement.reward;
-            this.showMessage(`🏆 成就解鎖：${achievement.name}！獲得 ${achievement.reward} 金幣！`);
-            this.updateAchievementUI();
-        }
-    }
-    
-    // 新增：更新成就UI
-    updateAchievementUI() {
-        const achievementList = document.getElementById('achievementList');
-        if (!achievementList) return;
-        
-        achievementList.innerHTML = '';
-        this.achievements.forEach(achievement => {
-            const achievementDiv = document.createElement('div');
-            achievementDiv.className = `achievement-item ${achievement.unlocked ? 'unlocked' : ''}`;
-            achievementDiv.innerHTML = `
-                <div class="achievement-name">${achievement.icon} ${achievement.name}</div>
-                <div class="achievement-description">${achievement.description}</div>
-                <div class="achievement-reward">獎勵: ${achievement.reward} 金幣</div>
-            `;
-            achievementList.appendChild(achievementDiv);
-        });
     }
     
     // 新增：處理魚類被捕獲
@@ -2849,11 +2798,6 @@ class FishingGame {
         this.stats.fishCaught++;
         this.stats.combo++;
         this.comboTimer = this.comboTimeLimit;
-        
-        // 檢查成就
-        if (this.stats.fishCaught >= 100) {
-            this.unlockAchievement('master_fisher');
-        }
         
         // 檢查彩金
         this.checkJackpot();
@@ -2908,7 +2852,6 @@ class FishingGame {
                 // 彩金效果
                 this.coins += effect.amount;
                 this.showMessage(`🎰 彩金獎勵：${effect.amount} 金幣！`);
-                this.unlockAchievement('jackpot_winner');
                 break;
         }
     }
