@@ -486,6 +486,7 @@ class FishingGame {
                     // 重置道具效果
                     if (itemName === 'rapidFire') {
                         this.cannon.setRapidFire(false);
+                        this.autoShootInterval = 120;
                     }
                 }
             }
@@ -1879,7 +1880,14 @@ class FishingGame {
     }
 
     fireLockOnLaser(muzzle, target, mode = 'manual') {
-        const damage = this.getLaserDamage(mode);
+        let damage = this.getLaserDamage(mode);
+        if (this.items.luckyShot.active && this.items.luckyShot.uses > 0) {
+            damage = Math.max(damage, target.health || damage);
+            this.items.luckyShot.uses--;
+            if (this.items.luckyShot.uses <= 0) {
+                this.items.luckyShot.active = false;
+            }
+        }
         this.createLockOnLaserEffect(muzzle.x, muzzle.y, target);
         this.createMiniLightningEffect(target.x, target.y);
 
@@ -2490,24 +2498,50 @@ class FishingGame {
         this.showMessage('冰凍技能啟動！');
         Utils.createIceEffect();
     }
+
+    getVisibleSkillTargets() {
+        return this.fishManager.fishes.filter(fish => this.isLaserTargetValid(fish));
+    }
+
+    getSkillImpactPoint() {
+        const target = this.autoLaserTarget && this.isLaserTargetValid(this.autoLaserTarget)
+            ? this.autoLaserTarget
+            : this.acquireLaserTarget('auto');
+        if (target) return { x: target.x, y: target.y };
+        return { x: this.canvas.width / 2, y: this.canvas.height * 0.55 };
+    }
+
+    applySkillDamage(fish, damage) {
+        if (!fish || fish.isDead) return;
+        const hitResult = this.fishManager.hitFish(fish, damage);
+        if (hitResult.score > 0) {
+            this.addScore(hitResult.score);
+        }
+        if (hitResult.killed && hitResult.coins > 0) {
+            this.coins += hitResult.coins;
+            this.totalWinAmount += hitResult.coins;
+            this.showCoinReward(fish.x, fish.y, hitResult.coins);
+            this.handleFishCaught(fish, hitResult.score, hitResult.coins, {
+                alreadyRemoved: true,
+                scoreAlreadyAdded: true,
+                coinsAlreadyAdded: true
+            });
+        }
+    }
     
     activateBomb() {
-        const bombRadius = GAME_CONFIG.SPECIAL_SKILLS.BOMB.radius;
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
+        const bombRadius = Math.max(220, GAME_CONFIG.SPECIAL_SKILLS.BOMB.radius);
+        const impact = this.getSkillImpactPoint();
         
         // 創建爆炸效果
-        Utils.createExplosion(centerX, centerY);
+        Utils.createExplosion(impact.x, impact.y);
         
         // 傷害範圍內的魚
         this.fishManager.fishes.forEach(fish => {
-            const distance = Utils.getDistance(fish.x, fish.y, centerX, centerY);
+            const distance = Utils.getDistance(fish.x, fish.y, impact.x, impact.y);
             if (distance <= bombRadius) {
-                const damage = this.currentBet * 2; // 爆彈傷害是賭注的2倍
-                const result = fish.takeDamage(damage);
-                if (result.killed) {
-                    this.handleFishCaught(fish);
-                }
+                const damage = Math.max(90, this.currentBet * 18);
+                this.applySkillDamage(fish, damage);
             }
         });
         
@@ -2518,29 +2552,17 @@ class FishingGame {
         this.skills.laser.active = true;
         this.skills.laser.duration = GAME_CONFIG.SPECIAL_SKILLS.LASER.duration;
         
-        this.showMessage('雷射蓄力中...');
-        
-        // 3秒後發射雷射
-        setTimeout(() => {
-            this.fireLaser();
-        }, 1000);
+        this.fireLaser();
     }
     
     fireLaser() {
-        const laserY = this.canvas.height / 2;
+        const targets = this.getVisibleSkillTargets()
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 6);
         
-        // 創建雷射效果
-        Utils.createLaserEffect(0, laserY, this.canvas.width, laserY);
-        
-        // 傷害雷射路徑上的所有魚
-        this.fishManager.fishes.forEach(fish => {
-            if (Math.abs(fish.y - laserY) <= 50) { // 雷射寬度50px
-                const damage = this.currentBet * 3; // 雷射傷害是賭注的3倍
-                const result = fish.takeDamage(damage);
-                if (result.killed) {
-                    this.handleFishCaught(fish);
-                }
-            }
+        targets.forEach(target => {
+            Utils.createChainLightning(this.cannon.x, this.cannon.y, target.x, target.y, 1, 0, true);
+            this.applySkillDamage(target, Math.max(120, this.currentBet * 22));
         });
         
         this.skills.laser.active = false;
@@ -2548,21 +2570,21 @@ class FishingGame {
     }
     
     activateNet() {
-        const netRadius = GAME_CONFIG.SPECIAL_SKILLS.NET.radius;
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
+        const netRadius = Math.max(240, GAME_CONFIG.SPECIAL_SKILLS.NET.radius);
+        const impact = this.getSkillImpactPoint();
         
         // 創建捕魚網效果
-        Utils.createNetEffect(centerX, centerY, netRadius);
+        Utils.createNetEffect(impact.x, impact.y, netRadius);
         
         // 捕獲範圍內的魚
         this.fishManager.fishes.forEach(fish => {
-            const distance = Utils.getDistance(fish.x, fish.y, centerX, centerY);
+            const distance = Utils.getDistance(fish.x, fish.y, impact.x, impact.y);
             if (distance <= netRadius) {
-                // 捕魚網有更高的捕獲率
-                if (Math.random() < 0.8) {
+                if (!fish.isBoss && Math.random() < 0.9) {
                     fish.die();
                     this.handleFishCaught(fish);
+                } else {
+                    this.applySkillDamage(fish, Math.max(70, this.currentBet * 12));
                 }
             }
         });
@@ -2649,6 +2671,7 @@ class FishingGame {
             case 'rapidFire':
                 this.items.rapidFire.active = true;
                 this.items.rapidFire.duration = config.duration;
+                this.autoShootInterval = 55;
                 if (this.cannon && typeof this.cannon.setRapidFire === 'function') {
                     this.cannon.setRapidFire(true);
                     console.log('連發模式啟動！持續時間:', config.duration);
