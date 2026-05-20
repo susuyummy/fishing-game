@@ -2240,8 +2240,23 @@ class FishingGame {
         this.updateUI();
     }
     
-    shouldHideFloatingPanels() {
-        return window.innerWidth <= 900 || window.innerHeight <= 760;
+    getActionDock() {
+        let dock = document.getElementById('actionDock');
+        if (dock) return dock;
+
+        dock = document.createElement('div');
+        dock.id = 'actionDock';
+        dock.className = 'action-dock';
+
+        const sideConsole = document.getElementById('sideConsole');
+        const controls = document.getElementById('controls');
+        if (sideConsole) {
+            sideConsole.insertBefore(dock, controls || null);
+        } else {
+            document.body.appendChild(dock);
+        }
+
+        return dock;
     }
 
     createSkillButtons() {
@@ -2299,7 +2314,7 @@ class FishingGame {
             `;
         }
         
-        document.body.appendChild(skillPanel);
+        this.getActionDock().appendChild(skillPanel);
         console.log('技能面板已添加到DOM，元素:', skillPanel);
         console.log('技能面板位置和樣式:', {
             position: getComputedStyle(skillPanel).position,
@@ -2322,20 +2337,9 @@ class FishingGame {
         
         console.log('技能按鈕創建完成，總共創建了', document.querySelectorAll('.skill-btn').length, '個按鈕');
         
-        // 確保面板在足夠大的螢幕可見，小螢幕則避免覆蓋遊戲畫面
-        setTimeout(() => {
-            const panel = document.getElementById('skillPanel');
-            if (panel) {
-                if (this.shouldHideFloatingPanels()) {
-                    panel.style.setProperty('display', 'none', 'important');
-                    return;
-                }
-                panel.style.display = 'block';
-                panel.style.visibility = 'visible';
-                panel.style.opacity = '1';
-                console.log('技能面板強制設置為可見');
-            }
-        }, 100);
+        skillPanel.style.display = 'block';
+        skillPanel.style.visibility = 'visible';
+        skillPanel.style.opacity = '1';
     }
     
     createItemButtons() {
@@ -2386,7 +2390,7 @@ class FishingGame {
             `;
         }
         
-        document.body.appendChild(itemPanel);
+        this.getActionDock().appendChild(itemPanel);
         console.log('道具面板已添加到DOM，元素:', itemPanel);
         console.log('道具面板位置和樣式:', {
             position: getComputedStyle(itemPanel).position,
@@ -2409,20 +2413,9 @@ class FishingGame {
         
         console.log('道具按鈕創建完成，總共創建了', document.querySelectorAll('.item-btn').length, '個按鈕');
         
-        // 確保面板在足夠大的螢幕可見，小螢幕則避免覆蓋遊戲畫面
-        setTimeout(() => {
-            const panel = document.getElementById('itemPanel');
-            if (panel) {
-                if (this.shouldHideFloatingPanels()) {
-                    panel.style.setProperty('display', 'none', 'important');
-                    return;
-                }
-                panel.style.display = 'block';
-                panel.style.visibility = 'visible';
-                panel.style.opacity = '1';
-                console.log('道具面板強制設置為可見');
-            }
-        }, 100);
+        itemPanel.style.display = 'block';
+        itemPanel.style.visibility = 'visible';
+        itemPanel.style.opacity = '1';
     }
     
     // 新增：使用技能
