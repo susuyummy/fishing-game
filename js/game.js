@@ -2195,36 +2195,22 @@ class FishingGame {
     // 新增：設置賭注
     setBet(betAmount) {
         const minBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MIN_BET : 1;
-        const maxBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MAX_BET : 100;
-        
-        if (betAmount >= minBet && betAmount <= maxBet) {
-            this.currentBet = betAmount;
-            this.updateUI();
-        }
+        const maxBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MAX_BET : 1000;
+        const normalizedBet = Math.floor(Number(betAmount));
+        if (!Number.isFinite(normalizedBet)) return;
+
+        this.currentBet = Utils.clamp(normalizedBet, minBet, maxBet);
+        this.updateUI();
     }
 
     // 新增：增加賭注
     increaseBet() {
-        const betOptions = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? 
-            GAME_CONFIG.BET_SYSTEM.BET_OPTIONS : [1, 2, 5, 10, 20, 50, 100];
-        
-        const currentIndex = betOptions.indexOf(this.currentBet);
-        if (currentIndex < betOptions.length - 1) {
-            this.currentBet = betOptions[currentIndex + 1];
-            this.updateUI();
-        }
+        this.setBet(this.currentBet + 1);
     }
 
     // 新增：減少賭注
     decreaseBet() {
-        const betOptions = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? 
-            GAME_CONFIG.BET_SYSTEM.BET_OPTIONS : [1, 2, 5, 10, 20, 50, 100];
-        
-        const currentIndex = betOptions.indexOf(this.currentBet);
-        if (currentIndex > 0) {
-            this.currentBet = betOptions[currentIndex - 1];
-            this.updateUI();
-        }
+        this.setBet(this.currentBet - 1);
     }
 
     // 舊的updateUI方法已移除，使用下面的新版本
@@ -2901,7 +2887,15 @@ class FishingGame {
         
         if (scoreElement) scoreElement.textContent = Utils.formatNumber(this.score);
         if (coinsElement) coinsElement.textContent = Utils.formatNumber(this.coins);
-        if (betElement) betElement.textContent = this.currentBet;
+        if (betElement) {
+            if (betElement.tagName === 'INPUT') {
+                if (document.activeElement !== betElement) {
+                    betElement.value = this.currentBet;
+                }
+            } else {
+                betElement.textContent = this.currentBet;
+            }
+        }
         
         // 更新其他舊版本UI元素
         const damageValue = document.getElementById('damageValue');

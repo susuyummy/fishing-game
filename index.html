@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>🎣 捕魚達人 - 完整版捕魚機遊戲</title>
-    <link rel="stylesheet" type="text/css" href="css/style.css?v=20260520-no-cannon-level">
+    <link rel="stylesheet" type="text/css" href="css/style.css?v=20260520-bet-input">
 </head>
 <body>
     <div id="gameContainer">
@@ -34,8 +34,8 @@
                         <button id="decreaseBet" class="bet-btn">-</button>
                         <div id="betInfo">
                             <div id="betAmount">
-                                <span>賭注: </span>
-                                <span id="currentBet">5</span>
+                                <label for="currentBet">賭注</label>
+                                <input id="currentBet" type="number" inputmode="numeric" min="1" max="1000" step="1" value="5">
                             </div>
                             <div id="damageInfo">
                                 <span>傷害: </span>
@@ -43,19 +43,6 @@
                             </div>
                         </div>
                         <button id="increaseBet" class="bet-btn">+</button>
-                    </div>
-                    <div id="betPresets">
-                        <button class="preset-btn" data-bet="1">1</button>
-                        <button class="preset-btn" data-bet="2">2</button>
-                        <button class="preset-btn" data-bet="5">5</button>
-                        <button class="preset-btn" data-bet="10">10</button>
-                        <button class="preset-btn" data-bet="20">20</button>
-                        <button class="preset-btn" data-bet="50">50</button>
-                        <button class="preset-btn" data-bet="100">100</button>
-                        <button class="preset-btn" data-bet="200">200</button>
-                        <button class="preset-btn" data-bet="300">300</button>
-                        <button class="preset-btn" data-bet="500">500</button>
-                        <button class="preset-btn" data-bet="1000">1000</button>
                     </div>
                 </div>
                 
@@ -91,12 +78,12 @@
     </div>
 
     <!-- 遊戲腳本 -->
-    <script src="js/utils.js?v=20260520-no-cannon-level"></script>
-    <script src="js/fish.js?v=20260520-no-cannon-level"></script>
-    <script src="js/cannon.js?v=20260520-no-cannon-level"></script>
-    <script src="js/bullet.js?v=20260520-no-cannon-level"></script>
-    <script src="js/fishManager.js?v=20260520-no-cannon-level"></script>
-    <script src="js/game.js?v=20260520-no-cannon-level"></script>
-    <script src="js/main.js?v=20260520-no-cannon-level"></script>
+    <script src="js/utils.js?v=20260520-bet-input"></script>
+    <script src="js/fish.js?v=20260520-bet-input"></script>
+    <script src="js/cannon.js?v=20260520-bet-input"></script>
+    <script src="js/bullet.js?v=20260520-bet-input"></script>
+    <script src="js/fishManager.js?v=20260520-bet-input"></script>
+    <script src="js/game.js?v=20260520-bet-input"></script>
+    <script src="js/main.js?v=20260520-bet-input"></script>
 </body>
 </html> 

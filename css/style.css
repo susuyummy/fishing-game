@@ -977,6 +977,45 @@ body {
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
 }
 
+#betAmount {
+    display: grid;
+    grid-template-columns: auto minmax(72px, 1fr);
+    align-items: center;
+    gap: 8px;
+}
+
+#betAmount label {
+    color: #FFE8B0;
+    font-weight: bold;
+}
+
+#currentBet {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    padding: 4px 8px;
+    border: 2px solid rgba(255, 215, 0, 0.95);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(30, 0, 8, 0.96), rgba(91, 0, 25, 0.9));
+    color: #FFD700;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    outline: none;
+    box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.16), 0 0 12px rgba(255, 60, 0, 0.25);
+}
+
+#currentBet:focus {
+    border-color: #FFFFFF;
+    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.2), 0 0 18px rgba(255, 215, 0, 0.7);
+}
+
+#currentBet::-webkit-inner-spin-button,
+#currentBet::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
 #betPresets {
     display: flex;
     gap: 5px;

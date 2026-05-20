@@ -337,12 +337,18 @@ window.addEventListener('unhandledrejection', function(e) {
 
 // 設置賭注系統事件監聽器
 function setupBetSystemListeners(game) {
+    const betInput = document.getElementById('currentBet');
+
+    function syncBetInput() {
+        if (betInput) betInput.value = game.currentBet;
+    }
+
     // 增加賭注按鈕
     const increaseBetBtn = document.getElementById('increaseBet');
     if (increaseBetBtn) {
         increaseBetBtn.addEventListener('click', () => {
             game.increaseBet();
-            updatePresetButtonsState(game.currentBet);
+            syncBetInput();
         });
     }
 
@@ -351,25 +357,31 @@ function setupBetSystemListeners(game) {
     if (decreaseBetBtn) {
         decreaseBetBtn.addEventListener('click', () => {
             game.decreaseBet();
-            updatePresetButtonsState(game.currentBet);
+            syncBetInput();
         });
     }
 
-    // 預設賭注按鈕
-    const presetButtons = document.querySelectorAll('.preset-btn');
-    presetButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const betAmount = parseInt(btn.dataset.bet);
-            game.setBet(betAmount);
-            updatePresetButtonsState(betAmount);
-        });
-    });
+    if (betInput) {
+        const minBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MIN_BET : 1;
+        const maxBet = (GAME_CONFIG && GAME_CONFIG.BET_SYSTEM) ? GAME_CONFIG.BET_SYSTEM.MAX_BET : 1000;
+        betInput.min = minBet;
+        betInput.max = maxBet;
+        betInput.value = game.currentBet;
 
-    // 初始化預設按鈕狀態
-    updatePresetButtonsState(game.currentBet);
+        betInput.addEventListener('input', () => {
+            if (betInput.value === '') return;
+            game.setBet(betInput.value);
+        });
+
+        betInput.addEventListener('blur', () => {
+            game.setBet(betInput.value || minBet);
+            syncBetInput();
+        });
+    }
 
     // 鍵盤快捷鍵
     document.addEventListener('keydown', (e) => {
+        if (document.activeElement === betInput) return;
         if (game.gameState !== 'playing') return;
 
         switch (e.code) {
@@ -377,57 +389,14 @@ function setupBetSystemListeners(game) {
             case 'NumpadAdd':
                 e.preventDefault();
                 game.increaseBet();
-                updatePresetButtonsState(game.currentBet);
+                syncBetInput();
                 break;
             case 'Minus': // - 鍵
             case 'NumpadSubtract':
                 e.preventDefault();
                 game.decreaseBet();
-                updatePresetButtonsState(game.currentBet);
-                break;
-            case 'Digit1':
-                e.preventDefault();
-                game.setBet(1);
-                updatePresetButtonsState(1);
-                break;
-            case 'Digit2':
-                e.preventDefault();
-                game.setBet(5);
-                updatePresetButtonsState(5);
-                break;
-            case 'Digit3':
-                e.preventDefault();
-                game.setBet(10);
-                updatePresetButtonsState(10);
-                break;
-            case 'Digit4':
-                e.preventDefault();
-                game.setBet(20);
-                updatePresetButtonsState(20);
-                break;
-            case 'Digit5':
-                e.preventDefault();
-                game.setBet(50);
-                updatePresetButtonsState(50);
-                break;
-            case 'Digit6':
-                e.preventDefault();
-                game.setBet(100);
-                updatePresetButtonsState(100);
+                syncBetInput();
                 break;
         }
     });
 }
-
-// 更新預設按鈕狀態
-function updatePresetButtonsState(currentBet) {
-    const presetButtons = document.querySelectorAll('.preset-btn');
-    presetButtons.forEach(btn => {
-        const betAmount = parseInt(btn.dataset.bet);
-        if (betAmount === currentBet) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-} 
