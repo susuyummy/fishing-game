@@ -227,31 +227,20 @@ class Utils {
         net.style.top = (centerY - radius) + 'px';
         net.style.width = (radius * 2) + 'px';
         net.style.height = (radius * 2) + 'px';
-        net.style.border = '3px solid #8B4513';
-        net.style.borderRadius = '50%';
-        net.style.background = 'radial-gradient(circle, rgba(139,69,19,0.2) 0%, rgba(139,69,19,0.1) 100%)';
-        net.style.animation = 'net-expand 1s ease-out';
+        net.style.backgroundImage = 'url("assets/images/fishing-net-effect.png")';
+        net.style.backgroundRepeat = 'no-repeat';
+        net.style.backgroundPosition = 'center';
+        net.style.backgroundSize = 'contain';
+        net.style.filter = 'drop-shadow(0 0 18px rgba(0, 255, 255, 0.85)) drop-shadow(0 0 12px rgba(255, 215, 0, 0.55))';
+        net.style.animation = 'net-expand 0.9s ease-out';
         net.style.zIndex = '85';
-        
-        // 添加網格效果
-        for (let i = 0; i < 8; i++) {
-            const line = this.createElement('div');
-            line.style.position = 'absolute';
-            line.style.width = '100%';
-            line.style.height = '2px';
-            line.style.background = '#8B4513';
-            line.style.top = (i * radius / 4) + 'px';
-            line.style.left = '0';
-            line.style.transform = `rotate(${i * 22.5}deg)`;
-            line.style.transformOrigin = 'center';
-            net.appendChild(line);
-        }
+        net.style.pointerEvents = 'none';
         
         document.getElementById('gameArea').appendChild(net);
         
         setTimeout(() => {
             this.removeElement(net);
-        }, 1000);
+        }, 900);
     }
 
     // 創建連鎖反應效果 - 性能優化版，支援連續電擊
