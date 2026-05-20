@@ -2904,13 +2904,11 @@ class FishingGame {
         if (betElement) betElement.textContent = this.currentBet;
         
         // 更新其他舊版本UI元素
-        const cannonLevelValue = document.getElementById('cannonLevelValue');
         const damageValue = document.getElementById('damageValue');
         const decreaseBetBtn = document.getElementById('decreaseBet');
         const increaseBetBtn = document.getElementById('increaseBet');
         const attackStatus = document.getElementById('attackStatus');
         
-        if (cannonLevelValue && this.cannon) cannonLevelValue.textContent = this.cannon.level + 1;
         if (damageValue) {
             damageValue.textContent = Math.ceil(this.getLaserDamage(this.autoShoot ? 'auto' : 'manual'));
         }
