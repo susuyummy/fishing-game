@@ -15,7 +15,7 @@ class FishManager {
         
         // 特殊魚類
         this.bossSpawnTimer = 0;
-        this.bossSpawnInterval = 1800; // 30秒
+        this.bossSpawnInterval = Utils.randomInt(1500, 4200);
         this.currentBoss = null;
         
         // 統計數據
@@ -115,10 +115,13 @@ class FishManager {
             this.groupSpawnTimer = 0;
         }
         
-        // Boss魚生成
-        if (this.bossSpawnTimer >= this.bossSpawnInterval && !this.currentBoss) {
+        // Boss魚隨機生成
+        if (this.bossSpawnTimer >= this.bossSpawnInterval && !this.currentBoss && Math.random() < 0.45) {
             this.spawnBossFish();
+        }
+        if (this.bossSpawnTimer >= this.bossSpawnInterval) {
             this.bossSpawnTimer = 0;
+            this.bossSpawnInterval = Utils.randomInt(1500, 4200);
         }
     }
 
@@ -392,32 +395,35 @@ class FishManager {
 
     // 計算金幣獎勵
     calculateCoinReward(fish) {
-        // 基礎金幣獎勵 = 魚類分數 / 3，但至少3個金幣 - 再次大幅增加基礎獎勵
-        let baseReward = Math.max(3, Math.floor(fish.score / 3));
-        
-        // 根據魚類類型調整獎勵 - 再次增加所有倍數
-        const typeMultipliers = [
-            3.0,  // 小魚 (類型0) - 從2.0提升到3.0
-            4.0,  // 中魚 (類型1) - 從2.5提升到4.0
-            5.0,  // 大魚 (類型2) - 從3.0提升到5.0
-            6.0,  // 金魚 (類型3) - 從4.0提升到6.0
-            8.0,  // 鯊魚 (類型4) - 從6.0提升到8.0
-            12.0  // 鯨魚 (類型5) - 從10.0提升到12.0
-        ];
-        
-        const multiplier = typeMultipliers[fish.type] || 3.0;
-        let coinReward = Math.floor(baseReward * multiplier);
-        
-        // Boss魚額外獎勵 - 增加到4倍
+        const payout = GAME_CONFIG.PAYOUT_SYSTEM || {};
+        const typeMultipliers = payout.TYPE_MULTIPLIERS || [];
+        const baseMultiplier = payout.BASE_MULTIPLIER || 1;
+        const typeMultiplier = typeMultipliers[fish.type] || 2.5;
+        const tier = this.pickPayoutTier();
+        let coinReward = Math.floor(Math.max(2, fish.score) * baseMultiplier * typeMultiplier * tier.multiplier);
+
         if (fish.isBoss) {
-            coinReward *= 4;
+            coinReward = Math.floor(coinReward * (payout.BOSS_MULTIPLIER || 3));
         }
-        
-        // 難度獎勵 (難度越高，獎勵越多) - 增加獎勵比例到25%
+
         const difficultyBonus = 1 + (this.difficultyLevel - 1) * 0.25;
         coinReward = Math.floor(coinReward * difficultyBonus);
-        
+        fish.lastPayoutTier = tier.name;
+
         return coinReward;
+    }
+
+    pickPayoutTier() {
+        const tiers = GAME_CONFIG.PAYOUT_SYSTEM?.RANDOM_TIERS || [{ name: 'NORMAL', multiplier: 1, weight: 1 }];
+        const totalWeight = tiers.reduce((total, tier) => total + tier.weight, 0);
+        let roll = Math.random() * totalWeight;
+
+        for (const tier of tiers) {
+            roll -= tier.weight;
+            if (roll <= 0) return tier;
+        }
+
+        return tiers[tiers.length - 1];
     }
 
     // 獲取最近的魚（用於自動瞄準）
@@ -557,7 +563,7 @@ class FishManager {
         this.bossSpawnTimer = 0;
         this.spawnInterval = 120;
         this.groupSpawnInterval = 600;
-        this.bossSpawnInterval = 1800;
+        this.bossSpawnInterval = Utils.randomInt(1500, 4200);
         this.maxFish = GAME_CONFIG.MAX_FISH_COUNT;
         
         this.initializeFishes();

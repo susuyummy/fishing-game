@@ -113,7 +113,7 @@ class FishingGame {
         
         // 初始化BOSS系統
         this.bossSystem = {
-            nextSpawnTime: Date.now() + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL,
+            nextSpawnTime: this.getNextBossSpawnTime(),
             activeBoss: null,
             bossHealth: 0,
             maxBossHealth: 0
@@ -229,6 +229,13 @@ class FishingGame {
             highestCombo: 0,
             currentCombo: 0
         };
+
+        if (this.bossSystem) {
+            this.bossSystem.activeBoss = null;
+            this.bossSystem.bossHealth = 0;
+            this.bossSystem.maxBossHealth = 0;
+            this.scheduleNextBossSpawn();
+        }
         
         // 設置閃電攻擊事件監聽器
         if (GAME_CONFIG.AUTO_LIGHTNING_MODE) {
@@ -498,10 +505,28 @@ class FishingGame {
     // 新增：檢查BOSS生成
     checkBossSpawn() {
         const now = Date.now();
-        if (now >= this.bossSystem.nextSpawnTime && !this.bossSystem.activeBoss) {
-            this.spawnBoss();
-            this.bossSystem.nextSpawnTime = now + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL;
+        if (this.bossSystem.activeBoss && !this.fishManager.fishes.includes(this.bossSystem.activeBoss)) {
+            this.bossSystem.activeBoss = null;
         }
+
+        if (now >= this.bossSystem.nextSpawnTime && !this.fishManager.hasActiveBoss()) {
+            if (Math.random() > (GAME_CONFIG.BOSS_SYSTEM.SPAWN_CHANCE || 0.65)) {
+                this.scheduleNextBossSpawn(12000);
+                return;
+            }
+            this.spawnBoss();
+        }
+    }
+
+    getNextBossSpawnTime(extraDelay = 0) {
+        const config = GAME_CONFIG.BOSS_SYSTEM;
+        const minDelay = config.MIN_SPAWN_INTERVAL || 30000;
+        const maxDelay = config.MAX_SPAWN_INTERVAL || 90000;
+        return Date.now() + extraDelay + Utils.randomInt(minDelay, maxDelay);
+    }
+
+    scheduleNextBossSpawn(extraDelay = 0) {
+        this.bossSystem.nextSpawnTime = this.getNextBossSpawnTime(extraDelay);
     }
 
     handleCollisions() {
@@ -2697,8 +2722,17 @@ class FishingGame {
     spawnBoss() {
         const bossTypes = GAME_CONFIG.BOSS_SYSTEM.BOSS_TYPES;
         const bossType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+        const side = Utils.randomInt(0, 3);
+        const margin = bossType.size + 30;
+        const spawnPoints = [
+            { x: -margin, y: Utils.random(margin, this.canvas.height - margin), vx: bossType.speed },
+            { x: this.canvas.width + margin, y: Utils.random(margin, this.canvas.height - margin), vx: -bossType.speed },
+            { x: Utils.random(margin, this.canvas.width - margin), y: -margin, vy: bossType.speed },
+            { x: Utils.random(margin, this.canvas.width - margin), y: this.canvas.height + margin, vy: -bossType.speed }
+        ];
+        const spawn = spawnPoints[side];
 
-        const boss = new Fish(this.canvas.width / 2, this.canvas.height / 2, {
+        const boss = new Fish(spawn.x, spawn.y, {
             name: bossType.name,
             size: bossType.size,
             speed: bossType.speed,
@@ -2711,6 +2745,9 @@ class FishingGame {
         boss.isBoss = true;
         boss.health = bossType.health;
         boss.maxHealth = bossType.health;
+        boss.vx = spawn.vx || Utils.random(-bossType.speed * 0.7, bossType.speed * 0.7);
+        boss.vy = spawn.vy || Utils.random(-bossType.speed * 0.7, bossType.speed * 0.7);
+        boss.angle = Utils.getAngle(0, 0, boss.vx, boss.vy);
         this.fishManager.addBoss(boss);
         
         this.bossSystem.activeBoss = boss;
@@ -2719,8 +2756,7 @@ class FishingGame {
         
         this.showMessage(`🚨 ${bossType.name} 出現了！`);
         
-        // 設置下次BOSS生成時間
-        this.bossSystem.nextSpawnTime = Date.now() + GAME_CONFIG.BOSS_SYSTEM.SPAWN_INTERVAL;
+        this.scheduleNextBossSpawn();
     }
     
     // 新增：檢查彩金

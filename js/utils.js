@@ -596,12 +596,14 @@ const GAME_CONFIG = {
     
     // BOSS系統
     BOSS_SYSTEM: {
-        SPAWN_INTERVAL: 180000, // 3分鐘
+        MIN_SPAWN_INTERVAL: 25000,
+        MAX_SPAWN_INTERVAL: 85000,
+        SPAWN_CHANCE: 0.68,
         BOSS_TYPES: [
             {
                 name: '海妖王',
-                health: 500,
-                score: 1000,
+                health: 360,
+                score: 1800,
                 size: 150,
                 speed: 0.3,
                 color: '#8B0000',
@@ -609,14 +611,39 @@ const GAME_CONFIG = {
             },
             {
                 name: '深海霸主',
-                health: 800,
-                score: 2000,
+                health: 620,
+                score: 3600,
                 size: 200,
                 speed: 0.2,
                 color: '#000080',
                 attacks: ['laser', 'summon']
+            },
+            {
+                name: '黃金龍王',
+                health: 460,
+                score: 5000,
+                size: 180,
+                speed: 0.26,
+                color: '#FFD700',
+                attacks: ['jackpot', 'summon']
             }
         ]
+    },
+
+    // 捕獲獎勵波動，讓小賠、小中、偶爾大中同時存在
+    PAYOUT_SYSTEM: {
+        BASE_MULTIPLIER: 1.45,
+        TYPE_MULTIPLIERS: [1.1, 1.25, 1.55, 2.1, 3.0, 4.2, 4.8, 6.2, 8.5, 12],
+        RANDOM_TIERS: [
+            { name: 'MISS', multiplier: 0.35, weight: 18 },
+            { name: 'SMALL', multiplier: 0.75, weight: 30 },
+            { name: 'NORMAL', multiplier: 1.15, weight: 28 },
+            { name: 'GOOD', multiplier: 2.1, weight: 14 },
+            { name: 'BIG', multiplier: 4.2, weight: 7 },
+            { name: 'SUPER', multiplier: 9, weight: 2.4 },
+            { name: 'MEGA', multiplier: 24, weight: 0.6 }
+        ],
+        BOSS_MULTIPLIER: 3.5
     },
     
     // 彩金系統
