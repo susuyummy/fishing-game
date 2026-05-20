@@ -1822,6 +1822,9 @@ class FishingGame {
 
     getLaserTargetPadding(fish) {
         const radius = fish?.radius || 0;
+        if (fish?.isBoss) {
+            return Math.ceil(Math.min(90, Math.max(44, radius * 0.38)));
+        }
         const spriteScale = fish?.type >= 8 ? 1.65 : fish?.type >= 3 ? 1.5 : 1.42;
         return Math.ceil(radius * spriteScale + 10);
     }
